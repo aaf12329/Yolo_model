@@ -18,8 +18,13 @@ existing MediaPipe gaze+blink pipeline for eye-controlled wheelchair operation.
 | 2 | 下载 MRL Eye Dataset（84,898 张）并抽样目视验证标签 | ✅ |
 | 3 | YOLO26 GPU 冒烟测试（推理 + 1 epoch 训练） | ✅ |
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
-| 5 | YOLO26n 睁/闭眼训练（50 epochs, imgsz=128, GPU）+ matplotlib 损失曲线 | 🔄 训练中 |
+| 5 | YOLO26n 睁/闭眼训练（早停于第 22 轮，最佳第 13 轮，GPU 9 分钟） | ✅ |
 | 6 | 注视方向模型（上看/中看/下看 → 前进/停/后退） | ⏸ 等待录制素材 |
+
+**阶段 5 结果 / Stage 5 results**（详见 [docs/training/summary.md](docs/training/summary.md)）：
+mAP50=**0.9718**，mAP50-95=**0.9401**，P=0.9506，R=0.9253；
+验证集受试者与训练集无重叠（跨人泛化）。权重：`runs/eye_yolo26n/weights/best.pt`。
+损失/指标曲线见 `docs/training/curves_loss.png` 与 `curves_metrics.png`。
 
 > 阶段 6 说明 / Stage 6 note: 公开数据集没有"注视方向+检测框"标注，需用
 > `scripts/collect_gaze_video.py` 录制本人素材（按屏幕提示往上看/看中间/往下看），
