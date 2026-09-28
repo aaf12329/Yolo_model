@@ -1,0 +1,18 @@
+# Datasets & training output / 数据集与训练输出
+datasets/
+runs/
+*.zip
+
+# Model weights / 模型权重（大文件不入库，另行保存）
+*.pt
+*.onnx
+*.engine
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/

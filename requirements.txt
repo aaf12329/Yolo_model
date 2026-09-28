@@ -1,0 +1,16 @@
+# Eye tracking for EyeWheelchairProject — YOLO26 training environment
+# 眼动追踪（服务 EyeWheelchairProject）— YOLO26 训练环境
+#
+# Python 3.10, conda env: yolo
+# PyTorch installed from cu128 index (RTX 5060 Ti / Blackwell sm_120):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#
+torch
+torchvision
+ultralytics>=8.4.0
+opencv-python
+numpy
+pillow
+pyyaml
+matplotlib
+pandas
