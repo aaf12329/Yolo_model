@@ -96,7 +96,17 @@ python scripts/plot_training.py
 python scripts/plot_training.py runs/smoke/yolo26n_coco8
 ```
 
-## 9. 录制注视方向素材 / Capture gaze-direction footage
+## 9. 准确率评估 / Accuracy evaluation
+
+```bash
+# MRL 验证集上：YOLO26 准确率/混淆矩阵 + MediaPipe 适用性探测，自动出报告和图
+# accuracy + confusion + MediaPipe probe on the MRL val split, report & charts auto-generated
+python scripts/eval_eye_accuracy.py
+```
+
+输出 / outputs: `docs/comparison/mrl_eval_report.md`、`confusion_matrix.png`、`accuracy_chart.png`
+
+## 10. 录制注视方向素材 / Capture gaze-direction footage
 
 **详细指南 / detailed guide: [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**
 
@@ -109,14 +119,14 @@ python scripts/collect_gaze_video.py --seconds 15 --rounds 3 --camera 1
 操作要点：空格开始、q 结束；**头不动只动眼睛**；正常眨眼；尽量在真实使用光照下录。
 Key points: SPACE to start, q to quit; keep head still (eyes only); natural blinks; record in real lighting.
 
-## 10. 训练时监控 GPU / Monitor GPU during training
+## 11. 训练时监控 GPU / Monitor GPU during training
 
 ```bash
 nvidia-smi -l 2        # Linux/Git Bash 每 2 秒刷新 / refresh every 2s
 nvidia-smi             # 单次查看 / one shot
 ```
 
-## 11. Git 提交规范 / Git commit convention
+## 12. Git 提交规范 / Git commit convention
 
 每个阶段一次提交，注释中英双语 / one commit per stage, bilingual messages:
 

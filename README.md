@@ -19,7 +19,16 @@ existing MediaPipe gaze+blink pipeline for eye-controlled wheelchair operation.
 | 3 | YOLO26 GPU 冒烟测试（推理 + 1 epoch 训练） | ✅ |
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
 | 5 | YOLO26n 睁/闭眼训练（早停于第 22 轮，最佳第 13 轮，GPU 9 分钟） | ✅ |
-| 6 | 注视方向模型（上看/中看/下看 → 前进/停/后退） | ⏸ 等待录制素材 |
+| 6 | 眨眼判定准确率评估 + MediaPipe 对比（MRL 验证集） | ✅ |
+| 7 | 注视方向模型（上看/中看/下看 → 前进/停/后退） | ⏸ 等待录制素材 |
+
+**阶段 6 评估结论 / Stage 6 benchmark**（详见 [docs/comparison/mrl_eval_report.md](docs/comparison/mrl_eval_report.md)）：
+
+- YOLO26 跨受试者判定准确率 **94.33%**（闭眼 96.05% / 睁眼 89.80%），mAP50=0.9719，单张 1.4ms
+- MediaPipe FaceLandmarker 在 300 张眼部特写上 **0 张检出人脸**（EAR 法需要整脸，
+  在近距离/眼部裁剪场景结构性不可用）——这是引入 YOLO26 的实证理由
+- 图：[confusion_matrix.png](docs/comparison/confusion_matrix.png) /
+  [accuracy_chart.png](docs/comparison/accuracy_chart.png)
 
 **阶段 5 结果 / Stage 5 results**（详见 [docs/training/summary.md](docs/training/summary.md)）：
 mAP50=**0.9718**，mAP50-95=**0.9401**，P=0.9506，R=0.9253；
