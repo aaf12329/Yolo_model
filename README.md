@@ -1,132 +1,394 @@
-# yolo_model — 眼动追踪模型（YOLO26）
+# yolo_model — 眼动追踪模型（YOLO26）· Eye Tracking Models for Eye-Controlled Wheelchair
 
-服务于 [EyeWheelchairProject](../EyeWheelchairProject) 的目标检测模型子项目：
-用 YOLO26 识别**睁眼 / 闭眼**，配合已有的 MediaPipe 视线+眨眼管线，
-实现"眼球活动操控轮椅前进 / 后退"。
-
-Serves the [EyeWheelchairProject](../EyeWheelchairProject): a YOLO26 model that
-classifies **open eye / closed eye** on webcam eye crops, complementing the
-existing MediaPipe gaze+blink pipeline for eye-controlled wheelchair operation.
+> 中文版在上，英文版在下方 / Chinese version above, English version below.
 
 ---
 
-## 当前进度 / Progress
+# 中文版
 
-| 阶段 / Stage | 内容 / Content | 状态 / Status |
+## 一、项目简介
+
+本项目是 [EyeWheelchairProject](../EyeWheelchairProject)（眼控轮椅原型）的**视觉模型子项目**，
+用 YOLO26 训练两个轻量检测模型，把"眼球活动"变成轮椅可以执行的信号：
+
+- **模型 A（已完成）**：睁眼 / 闭眼判定 → 支撑"眨眼确认"与"闭眼过久安全停止"
+- **模型 B（规划中）**：注视方向判定（上看 / 中看 / 下看）→ 映射轮椅 **前进 / 停 / 后退**
+
+上位机的交互状态机、串口输出层、Arduino 固件全部在 EyeWheelchairProject 仓库；
+本仓库只负责"训练模型 + 验证效果 + 交付权重"。
+
+> ⚠️ **安全边界**（同 EyeWheelchairProject）：模型输出只是"意图"信号。
+> 任何硬件控制前必须通过台架验证清单并加装物理急停按钮，不进行任何载人测试。
+
+## 二、当前进度
+
+| 阶段 | 内容 | 状态 |
 |---|---|---|
 | 1 | conda 环境 `yolo`（Python 3.10）+ PyTorch 2.11.0 cu128 + 项目骨架 | ✅ |
 | 2 | 下载 MRL Eye Dataset（84,898 张）并抽样目视验证标签 | ✅ |
-| 3 | YOLO26 GPU 冒烟测试（推理 + 1 epoch 训练） | ✅ |
+| 3 | YOLO26 GPU 冒烟测试（推理 + COCO8 训练循环） | ✅ |
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
-| 5 | YOLO26n 睁/闭眼训练（早停于第 22 轮，最佳第 13 轮，GPU 9 分钟） | ✅ |
-| 6 | 眨眼判定准确率评估 + MediaPipe 对比（MRL 验证集） | ✅ |
-| 7 | 注视方向模型（上看/中看/下看 → 前进/停/后退） | ⏸ 等待录制素材 |
+| 5 | 模型 A 训练（早停于第 22 轮，最佳第 13 轮，GPU 共 9.2 分钟） | ✅ |
+| 6 | 眨眼判定准确率评估 + MediaPipe 对比实验 | ✅ |
+| 7 | 模型 B：注视方向（等手机采集素材 → 自动打标 → 训练） | ⏸ 等素材 |
 
-**阶段 6 评估结论 / Stage 6 benchmark**（详见 [docs/comparison/mrl_eval_report.md](docs/comparison/mrl_eval_report.md)）：
+## 三、环境信息
 
-- YOLO26 跨受试者判定准确率 **94.33%**（闭眼 96.05% / 睁眼 89.80%），mAP50=0.9719，单张 1.4ms
-- MediaPipe FaceLandmarker 在 300 张眼部特写上 **0 张检出人脸**（EAR 法需要整脸，
-  在近距离/眼部裁剪场景结构性不可用）——这是引入 YOLO26 的实证理由
-- 图：[confusion_matrix.png](docs/comparison/confusion_matrix.png) /
-  [accuracy_chart.png](docs/comparison/accuracy_chart.png)
-
-**阶段 5 结果 / Stage 5 results**（详见 [docs/training/summary.md](docs/training/summary.md)）：
-mAP50=**0.9718**，mAP50-95=**0.9401**，P=0.9506，R=0.9253；
-验证集受试者与训练集无重叠（跨人泛化）。权重：`runs/eye_yolo26n/weights/best.pt`。
-损失/指标曲线见 `docs/training/curves_loss.png` 与 `curves_metrics.png`。
-
-> 阶段 6 说明 / Stage 6 note: 公开数据集没有"注视方向+检测框"标注，需用
-> `scripts/collect_gaze_video.py` 录制本人素材（按屏幕提示往上看/看中间/往下看），
-> 再用 MediaPipe 自动打标训练。录制方法见下方"注视方向数据采集"。
-> No public dataset offers gaze-direction detection labels, so stage 6 needs
-> self-recorded footage (auto-labeled with MediaPipe afterwards).
-
-## 环境信息 / Environment
-
-| 项 / Item | 值 / Value |
+| 项 | 值 |
 |---|---|
-| conda env | `yolo`（Python 3.10），`C:\Users\Guards\.conda\envs\yolo` |
-| PyTorch | 2.11.0+cu128（RTX 5060 Ti, sm_120, CUDA 12.8） |
+| conda env | `yolo`，Python 3.10，位于 `C:\Users\Guards\.conda\envs\yolo` |
+| PyTorch | 2.11.0+cu128（RTX 50 系必须 cu128 及以上；官方 cu128 源安装） |
 | ultralytics | 8.4.164（YOLO26 从 v8.4.0 起支持） |
-| GPU | NVIDIA GeForce RTX 5060 Ti 16GB |
+| GPU | NVIDIA GeForce RTX 5060 Ti 16GB（Blackwell，sm_120，CUDA 12.8） |
+| MediaPipe | 仅用于对比实验与后续自动打标（CPU 运行） |
+| 其他 | opencv-python、matplotlib、pandas、numpy |
 
-## 快速开始 / Quick Start
+> 本机**没有摄像头**，所有实验基于数据集离线完成；实时 demo 脚本保留，
+> 到有摄像头的机器上即可运行。
 
-```bash
-conda activate yolo
-python scripts/verify_gpu.py            # 验证 GPU / verify GPU
-python scripts/prepare_mrl_dataset.py   # 数据集转换 / dataset conversion
-python scripts/train_eye.py             # 训练 / train
-python scripts/plot_training.py         # 损失曲线 / loss curves
-```
-
-全部指令详见 [COMMANDS.md](COMMANDS.md)。
-
-## 数据集 / Dataset
-
-**MRL Eye Dataset**（mrlEyes_2018_01，Media Research Lab, VSB-TU Ostrava）
-
-- 84,898 张眼部特写灰度图（83×83 左右的小图）
-- 类别 / classes：`open_eye`（睁眼，41,946 张）/ `closed_eye`（闭眼，42,952 张）
-- 标注来源 / labels from：文件名第 5 个字段（已抽样目视验证 / visually verified）
-- 下载 / download: <http://mrl.cs.vsb.cz/data/eyedataset/mrlEyes_2018_01.zip>（~326 MB）
-- 划分 / split：按受试者划分（每第 10 人进 val），避免同一人跨集泄漏 / subject-wise split
-
-```
-datasets/mrl_eye_yolo/
-├─ images/{train,val}/*.png      硬链接到解压目录 / hardlinks
-├─ labels/{train,val}/*.txt      整图单框: "cls 0.5 0.5 1.0 1.0" / full-image box
-configs/mrl_eye.yaml             YOLO 数据配置 / YOLO data config
-```
-
-## 注视方向数据采集 / Gaze data capture（阶段 6 素材）
-
-**多人手机拍摄方案，详细指南见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**。
-
-流程：拍摄者照"转发文案"每人拍 3 段（上看/中看/下看，每段 30s~1min，
-**头不动只动眼睛**）→ 微信"文件"方式发送 → 归档到
-`yolo_model/phone_videos/每人/方向.mp4`（文件名带上/中/下字）→
-自动打标训练。转发文案：`phone_videos/转发给拍摄的人.txt`。
-（所有素材只存放在本仓库目录，不写入 EyeWheelchairProject。）
-
-自采备选：`python scripts/collect_gaze_video.py`（电脑摄像头+屏幕提示，见 COMMANDS.md 第 9 节）。
-
-## 与 EyeWheelchairProject 的关系 / Integration
-
-该项目的 Python 端已用 **MediaPipe 人脸 478 点**实现"视线选方向 + 眨眼确认"。
-本模型的分工 / division of labor：
-
-- **MediaPipe**：定位眼部（眼框裁剪）/ locate eyes, provide crops
-- **YOLO26 模型 A（本项目，训练中）**：眼部裁剪图上判定 睁眼/闭眼 → 眨眼确认 + 闭眼过久安全停止
-- **YOLO26 模型 B（阶段 6）**：注视方向 上看/中看/下看 → 轮椅 前进/停/后退
-- 上层状态机把判定结果映射为轮椅指令
-  （详见 EyeWheelchairProject 的 `src/hardware/serial_link.py` 与安全说明）
-
-> ⚠️ 安全边界同 EyeWheelchairProject：任何硬件控制前必须通过台架验证并加装物理急停。
-> Same safety boundary: no hardware control before bench validation + physical e-stop.
-
-## 目录结构 / Structure
+## 四、项目架构
 
 ```
 yolo_model/
-├─ README.md                     本文件（每阶段更新 / updated per stage）
-├─ COMMANDS.md                   全部指令整理 / command reference
-├─ requirements.txt              依赖清单 / dependencies
-├─ configs/mrl_eye.yaml          YOLO 数据配置 / data config
-├─ scripts/
-│  ├─ verify_gpu.py              GPU 验证 / GPU check
-│  ├─ prepare_mrl_dataset.py     数据集转换 / dataset conversion
-│  ├─ smoke_test_yolo26.py       YOLO26 冒烟测试 / smoke test
-│  ├─ train_eye.py               训练入口 / training entry
-│  └─ plot_training.py           matplotlib 损失/指标曲线 / loss & metric curves
-├─ datasets/                     数据（gitignore，不入库 / not committed）
-└─ runs/                         训练输出（gitignore；曲线图会另行提交 / curves committed）
+├─ README.md                        本文件：架构、进度、指标、规范（每阶段更新）
+├─ COMMANDS.md                      全部指令速查（按阶段整理，含英文注释）
+├─ requirements.txt                 依赖清单
+├─ .gitignore                       数据集/权重/视频不入库
+│
+├─ configs/
+│  └─ mrl_eye.yaml                  模型A的 YOLO 数据配置（路径、2 类名）
+│
+├─ models/
+│  └─ face_landmarker.task          MediaPipe 人脸 478 点模型（复制自 EyeWheelchairProject，
+│                                   供对比实验与自动打标复用，实验自包含）
+│
+├─ scripts/                         全部可执行脚本（每个文件头部有调用关系图注释）
+│  ├─ verify_gpu.py                 ① 环境验证：torch/cuda/ultralytics 自检
+│  ├─ prepare_mrl_dataset.py        ② 数据工程：解压 MRL → 解析文件名标签 →
+│  │                                   按受试者划分 train/val → 硬链接建 YOLO 目录
+│  │                                   → 生成 configs/mrl_eye.yaml
+│  ├─ smoke_test_yolo26.py          ③ 冒烟测试：GPU 推理 + COCO8 训练 1 epoch
+│  ├─ train_eye.py                  ④ 模型A训练入口（epochs/imgsz/batch 可调）
+│  ├─ plot_training.py              ⑤ 训练可视化：读 results.csv 画损失/指标曲线
+│  ├─ eval_eye_accuracy.py          ⑥ 准确率评估：验证集逐张判定 vs 文件名标签，
+│  │                                   混淆矩阵 + MediaPipe 适用性探测 + 图表
+│  ├─ compare_yolo_vs_mediapipe.py  ⑦ 实时对比（需摄像头，本机无，保留备用）
+│  └─ collect_gaze_video.py         ⑧ 模型B素材自采工具（电脑摄像头+屏幕提示，
+│                                      输出到 gaze_captures/，备用）
+│
+├─ phone_videos/                    模型B手机素材归档区（一人一文件夹，文件名带上/中/下）
+│  └─ 转发给拍摄的人.txt             可直接整段复制发微信群的大白话拍摄说明
+│
+├─ docs/
+│  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
+│  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
+│  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
+│
+├─ datasets/                        （不入库）MRL 原始 zip、解压目录、YOLO 格式数据集
+│
+├─ gaze_captures/                   （不入库）脚本自采的方向素材视频
+│
+└─ runs/                            （不入库）训练输出；模型A权重：
+                                    runs/eye_yolo26n/weights/best.pt
 ```
 
-## Git 提交规范 / Commit convention
+## 五、模型 A：睁眼/闭眼判定（已交付）
 
-每个阶段一次提交，注释中英双语 / one commit per stage, bilingual message:
+### 5.1 数据
+
+- **来源**：MRL Eye Dataset（mrlEyes_2018_01，捷克 VSB-TU Ostrava Media Research Lab），
+  官方下载 <http://mrl.cs.vsb.cz/data/eyedataset/mrlEyes_2018_01.zip>（~326MB）
+- **规模**：84,898 张眼部特写灰度图（约 83×83），含眼镜/光照/人种多样性
+- **标签**：文件名第 5 字段（`0`=睁眼，`1`=闭眼），已抽样目视核验
+- **划分**：**按受试者**划分——37 人中 s0010/s0020/s0030 全人进验证集（2,487 张），
+  其余进训练集（82,411 张），杜绝"同一人既当教材又当考题"的指标虚高
+  - train：睁眼 41,259 / 闭眼 41,152（均衡）
+  - val：睁眼 687 / 闭眼 1,800
+- **YOLO 标签**：每图一个整幅单框（特写图本身即眼部）；定位交给 MediaPipe，
+  本模型专注判定状态
+
+### 5.2 训练
+
+- `yolo26n.pt`（COCO 预训练）迁移学习；imgsz=128，batch 自动，最多 50 轮，patience=10
+- 早停：第 22 轮停止，**best.pt 取自第 13 轮**；GPU 实际用时 9.2 分钟
+
+### 5.3 指标
+
+| 指标 | 值 | 说明 |
+|---|---|---|
+| mAP@0.5 | 0.9718 | ultralytics 官方 val |
+| mAP@0.5:0.95 | 0.9401 | 同上 |
+| precision / recall | 0.9506 / 0.9253 | 同上 |
+| **判定准确率** | **94.33%** | 逐张 vs 文件名标签（2,485/2,487） |
+| 闭眼准确率 | 96.05% | 1,728/1,800 |
+| 睁眼准确率 | 89.80% | 616/687（受 MRL 标签噪声影响，为下限） |
+| 单张耗时 | 1.43 ms | RTX 5060 Ti，imgsz=128，batch=128 |
+
+### 5.4 与 MediaPipe 的对比（为什么引入 YOLO26）
+
+| 方法 | 结果 |
+|---|---|
+| YOLO26（本项目） | 跨受试者判定准确率 94.33%，单张 1.43ms |
+| MediaPipe FaceLandmarker | 300 张眼部特写 **0 张检出人脸（0%）** |
+
+- EAR（眼纵横比）法必须看到**整张脸**才能取 478 关键点；轮椅场景人离摄像头近、
+  画面主体是眼部，MediaPipe 结构性失效，YOLO26 不受此限制。
+- MediaPipe 保留"定位"价值：出 478 点 → 裁眼眶 → 交 YOLO26 判定；近距离找不到脸时
+  YOLO26 仍是唯一可用判定器。
+- 曲线与图：`docs/training/curves_loss.png`、`curves_metrics.png`、
+  `docs/comparison/confusion_matrix.png`、`accuracy_chart.png`
+
+### 5.5 产物
+
+- 权重：`runs/eye_yolo26n/weights/best.pt`（~6MB，不入库，训练可复现）
+- 输入约定：MediaPipe 眼眶裁剪图（含眉毛上下文）；输出：`open_eye` / `closed_eye` + 置信度
+
+## 六、模型 B：注视方向判定（规划中）
+
+- **目标**：三类 `look_up` / `look_center` / `look_down` → 上层映射 前进 / 停 / 后退
+- **为什么自己采数据**：公开数据集没有"注视方向+检测框"标注；
+  且方向判定必须贴合真实用户（眼型、眼镜、摄像头角度、光照）
+- **采集协议**（详见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)）：
+  每人手机拍 3 段视频（上看/中看/下看各 30s~1min，**头不动只动眼睛**），
+  微信"文件"方式发送，归档到 `phone_videos/一人一文件夹/`
+- **流水线**：视频 + 文件名方向 → MediaPipe 自动打标（脸检测→裁眼→虹膜位置核对）→
+  YOLO 格式 → 训练 YOLO26n → 曲线+报告 → 对接状态机
+- 启动条件：**≥3 人**（建议 5~8 人，含不同光照/眼镜状态）
+
+## 七、快速开始
+
+```bash
+conda activate yolo
+cd C:\Users\Guards\Desktop\yolo_model
+
+python scripts/verify_gpu.py             # ① 验证 GPU 环境
+python scripts/prepare_mrl_dataset.py    # ② 数据集转换（已执行过，可重复）
+python scripts/train_eye.py              # ③ 训练模型A（复现）
+python scripts/plot_training.py          # ④ 画损失曲线
+python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
+# python scripts/collect_gaze_video.py   # ⑥（有摄像头时）自采方向素材
+```
+
+全部指令逐条解释见 [COMMANDS.md](COMMANDS.md)。
+
+## 八、与 EyeWheelchairProject 的集成
+
+- **现管线**：`gaze_blink_confirm_demo.py` 用 MediaPipe 478 点做"视线选方向 + 眨眼确认"，
+  眨眼判定基于 EAR 阈值 + 个人基线校准
+- **本仓库的接入点**：以 `best.pt` 替换/冗余其 EAR 判定——MediaPipe 出眼眶裁剪图，
+  YOLO26 出 `open_eye/closed_eye` + 置信度，上层眨眼状态机逻辑不变
+  （闭眼 0.04~0.8s 计有效眨眼、0.3s 不应期等阈值全部保留）
+- **安全**：`serial_link.py` 默认模拟模式、低电锁、心跳包等机制不变；
+  模型错误判定不应直接变成轮椅动作，状态机层的确认逻辑继续生效
+
+## 九、Git 提交规范
+
+每阶段一次提交，注释**中英双语**（中文在前，英文在后）：
 
 ```
 阶段X：中文说明 / Stage X: English description
 ```
+
+## 十、已知限制
+
+- 本机无摄像头：实时脚本未实测，接口与离线链路已验证
+- MRL 文件名标签含少量噪声（文献报告一致率约 90~97%），故准确率为下限
+- MRL 以非亚裔面孔为主；模型 B 自采数据将补足本群体特征
+- `datasets/`、`runs/`、视频均不入库；权重与数据集可由脚本完整复现
+
+---
+
+# English Version
+
+## 1. Overview
+
+This repo is the **vision-model sub-project** of [EyeWheelchairProject](../EyeWheelchairProject)
+(an eye-controlled wheelchair prototype). It trains two lightweight YOLO26 detectors that turn
+eye activity into signals a wheelchair can act on:
+
+- **Model A (done)**: open-eye / closed-eye judgment → powers "blink = confirm" and
+  "eyes closed too long = safety stop"
+- **Model B (planned)**: gaze-direction judgment (look up / center / down) → mapped to
+  **forward / stop / backward**
+
+The interaction state machines, serial link, and Arduino firmware live in the
+EyeWheelchairProject repo; this repo only trains, validates, and ships models.
+
+> ⚠️ **Safety boundary** (same as EyeWheelchairProject): model output is an "intent" signal only.
+> No hardware control before bench-validation checklists pass and a physical e-stop is installed.
+> No on-human testing.
+
+## 2. Progress
+
+| Stage | Content | Status |
+|---|---|---|
+| 1 | conda env `yolo` (Python 3.10) + PyTorch 2.11.0 cu128 + skeleton | ✅ |
+| 2 | Download MRL Eye Dataset (84,898 imgs), visually verify labels | ✅ |
+| 3 | YOLO26 GPU smoke test (inference + COCO8 training loop) | ✅ |
+| 4 | Convert dataset to YOLO format (subject-wise train/val) | ✅ |
+| 5 | Train Model A (early stop @22, best @13, 9.2 min on GPU) | ✅ |
+| 6 | Accuracy benchmark vs MediaPipe | ✅ |
+| 7 | Model B: gaze direction (awaiting phone footage → auto-label → train) | ⏸ waiting |
+
+## 3. Environment
+
+| Item | Value |
+|---|---|
+| conda env | `yolo`, Python 3.10, at `C:\Users\Guards\.conda\envs\yolo` |
+| PyTorch | 2.11.0+cu128 (RTX 50-series requires cu128+; installed from official cu128 index) |
+| ultralytics | 8.4.164 (YOLO26 shipped in v8.4.0) |
+| GPU | NVIDIA GeForce RTX 5060 Ti 16GB (Blackwell, sm_120, CUDA 12.8) |
+| MediaPipe | for the comparison probe and upcoming auto-labeling (CPU) |
+| Others | opencv-python, matplotlib, pandas, numpy |
+
+> This machine has **no camera**; all experiments are dataset-based and offline.
+> Live-demo scripts are kept and ready for any camera-equipped machine.
+
+## 4. Repository Layout
+
+```
+yolo_model/
+├─ README.md                        this file: architecture, progress, metrics (updated per stage)
+├─ COMMANDS.md                      command reference organized by stage
+├─ requirements.txt                 dependencies
+├─ .gitignore                       datasets / weights / videos stay out of git
+│
+├─ configs/
+│  └─ mrl_eye.yaml                  Model-A YOLO data config (paths, 2 class names)
+│
+├─ models/
+│  └─ face_landmarker.task          MediaPipe 478-pt face model (copied from
+│                                   EyeWheelchairProject; reused for probing & auto-labeling)
+│
+├─ scripts/                         every script has a call-graph header comment
+│  ├─ verify_gpu.py                 ① environment check: torch/cuda/ultralytics
+│  ├─ prepare_mrl_dataset.py        ② data eng: unzip MRL → parse filename labels →
+│  │                                   subject-wise split → hardlinked YOLO tree → data yaml
+│  ├─ smoke_test_yolo26.py          ③ smoke test: GPU inference + 1-epoch COCO8 training
+│  ├─ train_eye.py                  ④ Model-A training entry (epochs/imgsz/batch flags)
+│  ├─ plot_training.py              ⑤ visualize: loss/metric curves from results.csv
+│  ├─ eval_eye_accuracy.py          ⑥ accuracy eval: per-image judgment vs filename labels,
+│  │                                   confusion matrix + MediaPipe applicability probe + charts
+│  ├─ compare_yolo_vs_mediapipe.py  ⑦ live head-to-head (needs camera; kept for later)
+│  └─ collect_gaze_video.py         ⑧ Model-B self-capture tool (webcam + on-screen prompts)
+│
+├─ phone_videos/                    Model-B phone-footage archive (one folder per person;
+│  └─ 转发给拍摄的人.txt             copy-paste WeChat instructions for contributors
+│
+├─ docs/
+│  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
+│  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
+│  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
+│
+├─ datasets/                        (not committed) MRL zip, extracted tree, YOLO-format dataset
+├─ gaze_captures/                   (not committed) self-captured gaze footage
+└─ runs/                            (not committed) training output; Model-A weights:
+                                    runs/eye_yolo26n/weights/best.pt
+```
+
+## 5. Model A: Open/Closed Eye (delivered)
+
+### 5.1 Data
+
+- **Source**: MRL Eye Dataset (mrlEyes_2018_01, Media Research Lab, VSB-TU Ostrava),
+  <http://mrl.cs.vsb.cz/data/eyedataset/mrlEyes_2018_01.zip> (~326 MB)
+- **Scale**: 84,898 grayscale eye close-ups (~83×83) with glasses/lighting/ethnicity diversity
+- **Labels**: 5th filename field (`0`=open, `1`=closed), spot-checked visually
+- **Split**: **subject-wise** — 37 subjects; s0010/s0020/s0030 (2,487 imgs) form the val set,
+  the rest (82,411 imgs) train. No identity overlap between train and val.
+  - train: 41,259 open / 41,152 closed (balanced)
+  - val: 687 open / 1,800 closed
+- **YOLO labels**: one full-image box per close-up; localization is MediaPipe's job,
+  this model judges the state.
+
+### 5.2 Training
+
+- Transfer learning from `yolo26n.pt` (COCO); imgsz=128, auto batch, max 50 epochs, patience=10
+- Early stop at epoch 22; **best.pt is from epoch 13**; 9.2 minutes on GPU
+
+### 5.3 Metrics
+
+| Metric | Value | Note |
+|---|---|---|
+| mAP@0.5 | 0.9718 | official ultralytics val |
+| mAP@0.5:0.95 | 0.9401 | official |
+| precision / recall | 0.9506 / 0.9253 | official |
+| **Judgment accuracy** | **94.33%** | per-image vs filename labels (2,485/2,487) |
+| Closed-eye accuracy | 96.05% | 1,728/1,800 |
+| Open-eye accuracy | 89.80% | 616/687 (limited by MRL label noise; a lower bound) |
+| Latency | 1.43 ms/img | RTX 5060 Ti, imgsz=128, batch=128 |
+
+### 5.4 Why YOLO26 instead of MediaPipe EAR
+
+| Method | Result |
+|---|---|
+| YOLO26 (this repo) | 94.33% cross-subject accuracy, 1.43 ms/img |
+| MediaPipe FaceLandmarker | face detected in **0 of 300** eye close-ups (0%) |
+
+- The EAR method requires **478 full-face landmarks**; in the wheelchair scenario the user
+  sits close to the camera and the frame is dominated by the eye region, where MediaPipe
+  fails structurally. YOLO26 has no such constraint.
+- MediaPipe keeps its "localization" value: 478 points → eye crops → YOLO26 judges;
+  when the face is too close to detect, YOLO26 remains the only working judge.
+- Curves & charts: `docs/training/curves_loss.png`, `curves_metrics.png`,
+  `docs/comparison/confusion_matrix.png`, `accuracy_chart.png`
+
+### 5.5 Artifacts
+
+- Weights: `runs/eye_yolo26n/weights/best.pt` (~6 MB, not committed; training is reproducible)
+- Input contract: MediaPipe eye crops (with brow context); output: `open_eye` / `closed_eye` + confidence
+
+## 6. Model B: Gaze Direction (planned)
+
+- **Goal**: 3 classes `look_up` / `look_center` / `look_down` → forward / stop / backward
+- **Why self-collected**: no public dataset ships gaze-direction detection labels, and the
+  judgment must match the real user (eye shape, glasses, camera angle, lighting)
+- **Protocol** (see [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)):
+  each contributor records 3 phone clips (up/center/down, 30 s–1 min each, **head still,
+  eyes only**), sent via WeChat "file" mode, archived under `phone_videos/<person>/`
+- **Pipeline**: footage + filename direction → MediaPipe auto-labeling (face → eye crop →
+  iris-position cross-check) → YOLO format → train YOLO26n → curves + report → state machine
+- **Kick-off threshold**: ≥3 contributors (5–8 recommended, vary lighting/glasses)
+
+## 7. Quick Start
+
+```bash
+conda activate yolo
+cd C:\Users\Guards\Desktop\yolo_model
+
+python scripts/verify_gpu.py             # ① verify GPU environment
+python scripts/prepare_mrl_dataset.py    # ② dataset conversion (idempotent)
+python scripts/train_eye.py              # ③ train Model A (reproduce)
+python scripts/plot_training.py          # ④ plot loss curves
+python scripts/eval_eye_accuracy.py      # ⑤ accuracy eval + comparison charts
+# python scripts/collect_gaze_video.py   # ⑥ (camera required) capture gaze footage
+```
+
+Every command explained line-by-line in [COMMANDS.md](COMMANDS.md).
+
+## 8. Integration with EyeWheelchairProject
+
+- **Current pipeline**: `gaze_blink_confirm_demo.py` uses MediaPipe 478-pt landmarks for
+  "gaze picks direction + blink confirms"; blink judgment is EAR-threshold with per-user calibration
+- **Integration point**: `best.pt` replaces / redundandizes the EAR judgment — MediaPipe
+  provides eye crops, YOLO26 returns `open_eye/closed_eye` + confidence; the blink state
+  machine is untouched (0.04–0.8 s valid blink, 0.3 s refractory period, etc.)
+- **Safety**: `serial_link.py` stays in simulation-by-default mode with heartbeat and
+  low-battery lock; a wrong model verdict never maps directly to a wheelchair action —
+  the state machine's confirmation logic still gates it
+
+## 9. Git Commit Convention
+
+One commit per stage, **bilingual messages** (Chinese first, then English):
+
+```
+阶段X：中文说明 / Stage X: English description
+```
+
+## 10. Known Limitations
+
+- No camera on this machine: live scripts untested in situ; offline interfaces fully verified
+- MRL filename labels carry minor noise (~90–97% agreement reported); accuracy is a lower bound
+- MRL is mostly non-Asian faces; Model B's self-collected data will cover our user population
+- `datasets/`, `runs/`, and videos are not committed; weights and datasets are fully
+  reproducible from the scripts
