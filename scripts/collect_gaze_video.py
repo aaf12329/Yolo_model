@@ -24,7 +24,7 @@ from pathlib import Path
 import cv2
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT.parent / "EyeWheelchairProject" / "data" / "raw_videos"
+OUT_DIR = ROOT / "gaze_captures"
 
 ZONES = [  # (key, 中文提示, 英文提示)
     ("up", "往上看 (look UP)", "向上看天花板方向"),

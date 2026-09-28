@@ -1,7 +1,15 @@
 # Datasets & training output / 数据集与训练输出
 datasets/
 runs/
+gaze_captures/
 *.zip
+
+# Videos (collected footage stays local) / 采集视频不入库
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
 
 # Model weights / 模型权重（大文件不入库，另行保存）
 *.pt

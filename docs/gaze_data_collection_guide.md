@@ -50,7 +50,7 @@
 收到的视频放进这个文件夹（已建好）：
 
 ```
-C:\Users\Guards\Desktop\EyeWheelchairProject\data\phone_videos\
+C:\Users\Guards\Desktop\yolo_model\phone_videos\
 ├─ 张三\
 │  ├─ 上看.mp4      （或 上看1.mp4 上看2.mp4，几条都行）
 │  ├─ 中间.mp4
@@ -100,7 +100,8 @@ C:\Users\Guards\Desktop\EyeWheelchairProject\data\phone_videos\
 
 ## 6. 隐私 / Privacy
 
-- 视频只存在你本机 `EyeWheelchairProject\data\phone_videos\`，不上传、不进 git。
+- 视频只存在你本机 `yolo_model\phone_videos\`，不上传、不进 git。
+  **不写入 EyeWheelchairProject 目录**（那边保持原样）。
 - 转发给别人的只有"拍摄说明文字"；视频走微信私发，属于拍摄者自愿提供。
 - 打标产物（裁剪的眼部小图）同样只在本机。
 

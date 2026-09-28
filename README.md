@@ -76,8 +76,9 @@ configs/mrl_eye.yaml             YOLO 数据配置 / YOLO data config
 
 流程：拍摄者照"转发文案"每人拍 3 段（上看/中看/下看，每段 30s~1min，
 **头不动只动眼睛**）→ 微信"文件"方式发送 → 归档到
-`EyeWheelchairProject/data/phone_videos/每人/方向.mp4`（文件名带上/中/下字）→
-自动打标训练。转发文案：`EyeWheelchairProject/data/phone_videos/转发给拍摄的人.txt`。
+`yolo_model/phone_videos/每人/方向.mp4`（文件名带上/中/下字）→
+自动打标训练。转发文案：`phone_videos/转发给拍摄的人.txt`。
+（所有素材只存放在本仓库目录，不写入 EyeWheelchairProject。）
 
 自采备选：`python scripts/collect_gaze_video.py`（电脑摄像头+屏幕提示，见 COMMANDS.md 第 9 节）。
 
