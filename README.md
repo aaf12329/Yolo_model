@@ -18,7 +18,14 @@ existing MediaPipe gaze+blink pipeline for eye-controlled wheelchair operation.
 | 2 | 下载 MRL Eye Dataset（84,898 张）并抽样目视验证标签 | ✅ |
 | 3 | YOLO26 GPU 冒烟测试（推理 + 1 epoch 训练） | ✅ |
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
-| 5 | YOLO26n 眼部训练（50 epochs）+ matplotlib 损失曲线 | 🔄 进行中 |
+| 5 | YOLO26n 睁/闭眼训练（50 epochs, imgsz=128, GPU）+ matplotlib 损失曲线 | 🔄 训练中 |
+| 6 | 注视方向模型（上看/中看/下看 → 前进/停/后退） | ⏸ 等待录制素材 |
+
+> 阶段 6 说明 / Stage 6 note: 公开数据集没有"注视方向+检测框"标注，需用
+> `scripts/collect_gaze_video.py` 录制本人素材（按屏幕提示往上看/看中间/往下看），
+> 再用 MediaPipe 自动打标训练。录制方法见下方"注视方向数据采集"。
+> No public dataset offers gaze-direction detection labels, so stage 6 needs
+> self-recorded footage (auto-labeled with MediaPipe afterwards).
 
 ## 环境信息 / Environment
 
@@ -58,14 +65,37 @@ datasets/mrl_eye_yolo/
 configs/mrl_eye.yaml             YOLO 数据配置 / YOLO data config
 ```
 
+## 注视方向数据采集 / Gaze data capture（阶段 6 素材）
+
+```bash
+conda activate yolo
+python scripts/collect_gaze_video.py            # 3 zones x 2 rounds x 20s ≈ 2 分钟
+python scripts/collect_gaze_video.py --seconds 15 --rounds 3
+```
+
+操作 / how to:
+
+1. 坐在平时使用轮椅的**同一位置、同一距离**，正常戴眼镜（如果你平时戴）/ sit as in real use
+2. 面对摄像头，按 **空格** 开始，按提示依次"往上看 → 看中间 → 往下看"，每段 20 秒带倒计时
+3. **关键：头保持不动，只动眼球**——否则模型学到的会是头部姿态而不是注视方向
+   / keep the head still, move eyes only, otherwise the model learns head pose
+4. 自然眨眼即可；录满 2 轮（约 2 分钟）后按 q 结束
+5. 建议在不同光照下再录 1~2 次（白天/晚上），增强鲁棒性 / record extra sessions in different lighting
+
+输出 / output（不进 git，位于 EyeWheelchairProject/data/raw_videos/）:
+
+- `gaze_capture_日期时间.mp4` — 原始视频 / raw footage
+- `gaze_capture_日期时间.json` — 每段 {zone, t_start, t_end}，供自动打标 / segments for auto-labeling
+
 ## 与 EyeWheelchairProject 的关系 / Integration
 
 该项目的 Python 端已用 **MediaPipe 人脸 478 点**实现"视线选方向 + 眨眼确认"。
 本模型的分工 / division of labor：
 
 - **MediaPipe**：定位眼部（眼框裁剪）/ locate eyes, provide crops
-- **YOLO26（本项目）**：在眼部裁剪图上判定 睁眼/闭眼 / judge open/closed on the crop
-- 上层状态机把"闭眼时长/频率"映射为轮椅 前进/后退/停止 指令
+- **YOLO26 模型 A（本项目，训练中）**：眼部裁剪图上判定 睁眼/闭眼 → 眨眼确认 + 闭眼过久安全停止
+- **YOLO26 模型 B（阶段 6）**：注视方向 上看/中看/下看 → 轮椅 前进/停/后退
+- 上层状态机把判定结果映射为轮椅指令
   （详见 EyeWheelchairProject 的 `src/hardware/serial_link.py` 与安全说明）
 
 > ⚠️ 安全边界同 EyeWheelchairProject：任何硬件控制前必须通过台架验证并加装物理急停。
