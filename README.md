@@ -100,6 +100,7 @@ yolo_model/
 │  ├─ ai_dev_resources.md           AI 开发网站与工具大全（文档/算力/标注/部署/学习资源）
 │  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
 │  ├─ integration.md                EyeWheelchairProject 接入指南（接口/阈值/安全）
+│  ├─ training_journey.md           训练全程复盘：数据集→训练→评估，问题→根因→解决→预防
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
 │
@@ -330,6 +331,7 @@ yolo_model/
 │  ├─ ai_dev_resources.md           AI-dev sites & tools catalog (docs/compute/labeling/deploy/learning)
 │  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
 │  ├─ integration.md                EyeWheelchairProject integration guide (contract/thresholds/safety)
+│  ├─ training_journey.md           full journey retrospective: datasets→training→eval, problems→fixes
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
 │
