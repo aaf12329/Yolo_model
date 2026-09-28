@@ -72,25 +72,16 @@ configs/mrl_eye.yaml             YOLO 数据配置 / YOLO data config
 
 ## 注视方向数据采集 / Gaze data capture（阶段 6 素材）
 
+**详细要求与操作指南见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**
+（准备工作、逐步操作、硬性要求、自检清单、常见问题都在里面）。速查：
+
 ```bash
 conda activate yolo
 python scripts/collect_gaze_video.py            # 3 zones x 2 rounds x 20s ≈ 2 分钟
-python scripts/collect_gaze_video.py --seconds 15 --rounds 3
 ```
 
-操作 / how to:
-
-1. 坐在平时使用轮椅的**同一位置、同一距离**，正常戴眼镜（如果你平时戴）/ sit as in real use
-2. 面对摄像头，按 **空格** 开始，按提示依次"往上看 → 看中间 → 往下看"，每段 20 秒带倒计时
-3. **关键：头保持不动，只动眼球**——否则模型学到的会是头部姿态而不是注视方向
-   / keep the head still, move eyes only, otherwise the model learns head pose
-4. 自然眨眼即可；录满 2 轮（约 2 分钟）后按 q 结束
-5. 建议在不同光照下再录 1~2 次（白天/晚上），增强鲁棒性 / record extra sessions in different lighting
-
-输出 / output（不进 git，位于 EyeWheelchairProject/data/raw_videos/）:
-
-- `gaze_capture_日期时间.mp4` — 原始视频 / raw footage
-- `gaze_capture_日期时间.json` — 每段 {zone, t_start, t_end}，供自动打标 / segments for auto-labeling
+要点：空格开始、q 结束；**头不动只动眼睛**（唯一硬性要求）；正常眨眼；
+建议在 2~4 种光照/环境下各录一场。输出在 EyeWheelchairProject/data/raw_videos/。
 
 ## 与 EyeWheelchairProject 的关系 / Integration
 

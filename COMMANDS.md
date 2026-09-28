@@ -98,10 +98,12 @@ python scripts/plot_training.py runs/smoke/yolo26n_coco8
 
 ## 9. 录制注视方向素材 / Capture gaze-direction footage
 
+**详细指南 / detailed guide: [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**
+
 ```bash
 # 默认 3 个方向 x 2 轮 x 20 秒 / 3 zones x 2 rounds x 20s
 python scripts/collect_gaze_video.py
-python scripts/collect_gaze_video.py --seconds 15 --rounds 3 --camera 0
+python scripts/collect_gaze_video.py --seconds 15 --rounds 3 --camera 1
 ```
 
 操作要点：空格开始、q 结束；**头不动只动眼睛**；正常眨眼；尽量在真实使用光照下录。
