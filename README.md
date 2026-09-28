@@ -181,7 +181,16 @@ python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
 - **安全**：`serial_link.py` 默认模拟模式、低电锁、心跳包等机制不变；
   模型错误判定不应直接变成轮椅动作，状态机层的确认逻辑继续生效
 
-## 九、Git 提交规范
+## 九、Git 提交规范 / 提交分工
+
+**分工规则 / Responsibilities**（2026-09-28 约定）：
+
+- 日常 `git add` + `git commit` 由 ZCode（助手）负责执行
+  / day-to-day `git add` + `git commit` is ZCode's (the assistant's) job
+- **`git push` 只有仓库所有者本人执行**；ZCode 需要 push 时**必须先征得同意**，
+  除非所有者明确说过可以推
+  / **`git push` is reserved for the repo owner**; ZCode must ask for permission
+  before pushing, unless the owner has explicitly said otherwise
 
 每阶段一次提交，注释**中英双语**（中文在前，英文在后）：
 
@@ -377,7 +386,13 @@ Every command explained line-by-line in [COMMANDS.md](COMMANDS.md).
   low-battery lock; a wrong model verdict never maps directly to a wheelchair action —
   the state machine's confirmation logic still gates it
 
-## 9. Git Commit Convention
+## 9. Git Commit Convention & Responsibilities
+
+**Responsibilities** (agreed 2026-09-28):
+
+- Day-to-day `git add` + `git commit` is ZCode's (the assistant's) job
+- **`git push` is reserved for the repo owner**; ZCode must ask for permission
+  before pushing, unless the owner has explicitly said otherwise
 
 One commit per stage, **bilingual messages** (Chinese first, then English):
 

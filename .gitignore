@@ -1,26 +1,55 @@
-# Datasets & training output / 数据集与训练输出
+# ============================================
+# yolo_model .gitignore
+# 原则：代码与文档入库；数据、权重、视频、训练产物不入库（可由脚本复现）
+# Principle: code & docs are committed; data, weights, videos and training
+# outputs are not (everything is reproducible from scripts).
+# ============================================
+
+# ---- 数据集与训练输出 / datasets & training output ----
 datasets/
 runs/
 gaze_captures/
 *.zip
 
-# Videos (collected footage stays local) / 采集视频不入库
+# ---- 采集视频（素材只留本机）/ collected footage stays local ----
 *.mp4
 *.mov
 *.avi
 *.mkv
 *.webm
+*.wmv
 
-# Model weights / 模型权重（大文件不入库，另行保存）
+# ---- 模型权重（大文件）/ model weights ----
 *.pt
 *.onnx
 *.engine
+*.torchscript
+*.tflite
 
-# Python
+# ---- Python 运行产物 / Python artifacts ----
 __pycache__/
 *.pyc
+*.pyo
 *.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
 
-# IDE
+# ---- 虚拟环境 / virtual envs ----
+myvenv/
+venv/
+.venv/
+env/
+
+# ---- IDE / 编辑器 / IDE & editor ----
 .idea/
 .vscode/
+
+# ---- 操作系统 / OS junk ----
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+
+# ---- 临时文件 / temp files ----
+*.tmp
+*.log

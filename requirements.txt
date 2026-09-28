@@ -1,16 +1,24 @@
-# Eye tracking for EyeWheelchairProject — YOLO26 training environment
-# 眼动追踪（服务 EyeWheelchairProject）— YOLO26 训练环境
+# ============================================================
+# yolo_model 依赖清单 / dependencies
+# 环境 / env: conda "yolo", Python 3.10
 #
-# Python 3.10, conda env: yolo
-# PyTorch installed from cu128 index (RTX 5060 Ti / Blackwell sm_120):
-#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# ① PyTorch 必须从 cu128 源安装（RTX 50 系 Blackwell sm_120 要求）：
+#    PyTorch must come from the cu128 index (required by RTX 50-series sm_120):
 #
-torch
-torchvision
-ultralytics>=8.4.0
-opencv-python
-numpy
-pillow
-pyyaml
-matplotlib
-pandas
+#    pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+#
+#    （+cu128 本地版本号在普通 PyPI 上不存在，故不写入下方列表 / the +cu128
+#     local version tag does not exist on plain PyPI, so it is not listed below）
+#
+# ② 其余依赖版本与已验证环境一致 / versions below match the verified environment:
+#    pip install -r requirements.txt
+# ============================================================
+
+ultralytics==8.4.164      # YOLO26 自 v8.4.0 起支持 / YOLO26 shipped in v8.4.0
+opencv-python==5.0.0.93
+mediapipe==1.0.1          # 仅评估/自动打标用 / only for eval & auto-labeling
+numpy==2.2.6
+matplotlib==3.10.9        # 损失/指标曲线绘图 / loss & metric curves
+pandas==2.3.3             # results.csv 读取 / read results.csv
+pillow==12.3.0
+pyyaml==6.0.3
