@@ -45,15 +45,15 @@ mAP50-95=**0.9754**；权重已入库 `models/gaze_yolo26n.pt`（训练原始输
 
 | 项 | 值 |
 |---|---|
-| conda env | `yolo`，Python 3.10，位于 `C:\Users\Guards\.conda\envs\yolo` |
-| PyTorch | 2.11.0+cu128（RTX 50 系必须 cu128 及以上；官方 cu128 源安装） |
+| conda env | `yolo`，Python 3.10。训练机：`C:\Users\Guards\.conda\envs\yolo`；本机（无独显）：`D:\Anaconda\envs\yolo` |
+| PyTorch | 2.11.0。训练机 +cu128（RTX 50 系要求）；无独显机器装 **CPU 构建**（同一版本号，API 一致、只是慢） |
 | ultralytics | 8.4.164（YOLO26 从 v8.4.0 起支持） |
 | GPU | NVIDIA GeForce RTX 5060 Ti 16GB（Blackwell，sm_120，CUDA 12.8） |
 | MediaPipe | 仅用于对比实验与后续自动打标（CPU 运行） |
 | 其他 | opencv-python、matplotlib、pandas、numpy |
 
-> 本机**没有摄像头**，所有实验基于数据集离线完成；实时 demo 脚本保留，
-> 到有摄像头的机器上即可运行。
+> 训练机没有摄像头，实验全部基于数据集离线完成；有摄像头的机器上可直接跑实时脚本
+> （见"十一、本机实时工具"）。两处依赖锁定同一套版本，代码在两边通用。
 
 ## 四、项目架构
 
@@ -84,8 +84,12 @@ yolo_model/
 │  ├─ compare_yolo_vs_mediapipe.py  ⑦ 实时对比（需摄像头，本机无，保留备用）
 │  ├─ collect_gaze_video.py         ⑧ 模型B素材自采工具（电脑摄像头+屏幕提示，
 │  │                                   输出到 gaze_captures/，备用）
-│  └─ auto_label_phone_videos.py    ⑨ 手机视频自动打标（抽帧+裁眼+QC虹膜排序校验，
-│                                      已用合成视频端到端验证；输出 datasets/phone_gaze_yolo/）
+│  ├─ auto_label_phone_videos.py    ⑨ 手机视频自动打标（抽帧+裁眼+QC虹膜排序校验，
+│  │                                   已用合成视频端到端验证；输出 datasets/phone_gaze_yolo/）
+│  ├─ live_detect.py                ⑩ 摄像头实时检测：MediaPipe 定位 + 双模型判定，
+│  │                                   叠加眼框与结论面板（Q 退出 / S 截图）
+│  └─ test_gaze_live.py             ⑪ 注视方向实测：屏幕绿点目标协议 → 准确率 + 混淆矩
+│                                      阵报告（闭眼帧由模型A门控、不计分）
 │
 ├─ phone_videos/                    模型B手机素材归档区（一人一文件夹，文件名带上/中/下）
 │  └─ 转发给拍摄的人.txt             可直接整段复制发微信群的大白话拍摄说明
@@ -183,7 +187,7 @@ yolo_model/
 
 ```bash
 conda activate yolo
-cd C:\Users\Guards\Desktop\yolo_model
+cd <repo path on this machine>   # e.g. C:\Users\AAF12\Desktop\Yolo_model
 
 python data/download_datasets.py --dataset all --extract  # ⓪ 下载数据（断点续传+校验）
 python scripts/verify_gpu.py             # ① 验证 GPU 环境
@@ -193,6 +197,8 @@ python scripts/plot_training.py          # ④ 画损失曲线
 python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
 python predict.py --image 某张人脸照片.jpg  # ⑥ 一行命令跑预测（权重已入库）
 # python scripts/collect_gaze_video.py   # ⑦（有摄像头时）自采方向素材
+python scripts/live_detect.py            # ⑩ 摄像头实时检测（Q 退出 / S 截图）
+python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕绿点看上/中/下）
 ```
 
 全部指令逐条解释见 [COMMANDS.md](COMMANDS.md)。
@@ -226,12 +232,42 @@ python predict.py --image 某张人脸照片.jpg  # ⑥ 一行命令跑预测（
 
 ## 十、已知限制
 
-- 本机无摄像头：实时脚本未实测，接口与离线链路已验证
+- 无摄像头的机器上无法实测实时脚本（离线接口与链路已验证）；在有摄像头的机器上，
+  `live_detect.py` 已跑通无窗口自检并用真实人脸截图验证，`test_gaze_live.py` 的统计与
+  协议通路已验证，**真人实测准确率待补**
 - MRL 文件名标签含少量噪声（文献报告一致率约 90~97%），故准确率为下限
 - 模型 A 在"睁眼但视线朝下"的画面上偶判为 closed_eye（MRL 闭眼类混有垂目样本的域差异），
   个人化微调可修复；predict.py 实测快照时已观察到并如实记录
 - MRL 以非亚裔面孔为主；模型 B 自采数据将补足本群体特征
 - `datasets/`、`runs/`、视频均不入库；权重与数据集可由脚本完整复现
+
+## 十一、本机实时工具（有摄像头时）
+
+| 脚本 | 用途 | 输出 |
+|---|---|---|
+| `scripts/live_detect.py` | 摄像头实时检测：MediaPipe 定位 478 点 → 裁双眼 → 模型A 判睁/闭 + 模型B 判上/中/下 → 画面叠加眼框、结论面板、FPS | 窗口；按 `S` 存到 `runs/live_snapshots/` |
+| `scripts/test_gaze_live.py` | **注视方向实测**：屏幕出现绿点（上/中/下），按提示看 → 逐帧记录模型输出 → 准确率 + 混淆矩阵 | `docs/gaze_test/`：`frames.csv`、`report.md`、`gaze_confusion_matrix.png` |
+
+```bash
+conda activate yolo
+python scripts/live_detect.py                             # Q 退出，S 截图
+python scripts/live_detect.py --camera 1 --conf 0.4       # 换摄像头 / 放宽阈值
+python scripts/test_gaze_live.py                          # 3 方向 × 2 轮 ≈ 45 秒，Q 中止
+python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # 更长的测试
+```
+
+**实测（本机 CPU，无独显）**：
+
+- 全管线（MediaPipe 定位 + 双眼 2 模型）**66 ms/帧 ≈ 15 FPS**，CPU 上做验证够用
+- `live_detect.py`：无窗口自检 8 帧跑通；用真实人脸截图验证——检出人脸、2 个眼框、双模型出结论
+- `test_gaze_live.py`：统计逻辑经合成预测校验（准确率/混淆矩阵计数正确），完整协议通路跑通；
+  **真人实测准确率待补**（坐到摄像头前跑一次即自动生成报告）
+
+**门控设计**：闭眼帧的"注视方向"没有物理意义，两个脚本里模型 B 的输出都由模型 A 门控——
+`test_gaze_live.py` 把闭眼帧不计分并单独统计；`live_detect.py` 面板照常显示，但闭眼时不可采信。
+
+**代码约定**：`eye_boxes/eye_crop`、`top_pred`、`combine` 三组函数与 `predict.py` **同款**，
+两处需同步修改（各脚本头部注释已标注）。
 
 ---
 
@@ -279,15 +315,16 @@ main error is up→center (small +10° amplitude), harmless for control semantic
 
 | Item | Value |
 |---|---|
-| conda env | `yolo`, Python 3.10, at `C:\Users\Guards\.conda\envs\yolo` |
-| PyTorch | 2.11.0+cu128 (RTX 50-series requires cu128+; installed from official cu128 index) |
+| conda env | `yolo`, Python 3.10. Training machine: `C:\Users\Guards\.conda\envs\yolo`; camera machine (no GPU): `D:\Anaconda\envs\yolo` |
+| PyTorch | 2.11.0. Training machine: +cu128 (required by RTX 50-series); camera machine: **CPU build** — same version number and API, just slower |
 | ultralytics | 8.4.164 (YOLO26 shipped in v8.4.0) |
 | GPU | NVIDIA GeForce RTX 5060 Ti 16GB (Blackwell, sm_120, CUDA 12.8) |
 | MediaPipe | for the comparison probe and upcoming auto-labeling (CPU) |
 | Others | opencv-python, matplotlib, pandas, numpy |
 
-> This machine has **no camera**; all experiments are dataset-based and offline.
-> Live-demo scripts are kept and ready for any camera-equipped machine.
+> The training machine has **no camera** — all experiments are dataset-based and offline.
+> On a camera-equipped machine the live scripts run directly (see "11. On-Machine Live Tools").
+> Both machines pin the same dependency versions, so the code is portable between them.
 
 ## 4. Repository Layout
 
@@ -318,8 +355,13 @@ yolo_model/
 │  │                                   confusion matrix + MediaPipe applicability probe + charts
 │  ├─ compare_yolo_vs_mediapipe.py  ⑦ live head-to-head (needs camera; kept for later)
 │  ├─ collect_gaze_video.py         ⑧ Model-B self-capture tool (webcam + on-screen prompts)
-│  └─ auto_label_phone_videos.py    ⑨ phone-video auto-labeling (frame sampling + eye crops
-│                                      + iris-ordering QC; e2e verified on synthetic videos)
+│  ├─ auto_label_phone_videos.py    ⑨ phone-video auto-labeling (frame sampling + eye crops
+│  │                                    + iris-ordering QC; e2e verified on synthetic videos)
+│  ├─ live_detect.py                ⑩ live webcam detection: MediaPipe locate + both models,
+│  │                                    overlay eye boxes & verdict panel (Q quit / S snapshot)
+│  └─ test_gaze_live.py             ⑪ live gaze benchmark: on-screen target-dot protocol →
+│                                       accuracy + confusion-matrix report (closed-eye frames
+│                                       gated by Model A, not scored)
 │
 ├─ phone_videos/                    Model-B phone-footage archive (one folder per person;
 │  └─ 转发给拍摄的人.txt             copy-paste WeChat instructions for contributors
@@ -417,7 +459,7 @@ yolo_model/
 
 ```bash
 conda activate yolo
-cd C:\Users\Guards\Desktop\yolo_model
+cd <repo path on this machine>   # e.g. C:\Users\AAF12\Desktop\Yolo_model
 
 python data/download_datasets.py --dataset all --extract  # ⓪ download datasets
 python scripts/verify_gpu.py             # ① verify GPU environment
@@ -427,6 +469,8 @@ python scripts/plot_training.py          # ④ plot loss curves
 python scripts/eval_eye_accuracy.py      # ⑤ accuracy eval + comparison charts
 python predict.py --image some_face.jpg  # ⑥ one-command prediction (weights committed)
 # python scripts/collect_gaze_video.py   # ⑦ (camera required) capture gaze footage
+python scripts/live_detect.py            # ⑩ live webcam detection (Q quit / S snapshot)
+python scripts/test_gaze_live.py         # ⑪ live gaze benchmark (follow the green dot)
 ```
 
 Every command explained line-by-line in [COMMANDS.md](COMMANDS.md).
@@ -458,10 +502,44 @@ One commit per stage, **bilingual messages** (Chinese first, then English):
 
 ## 10. Known Limitations
 
-- No camera on this machine: live scripts untested in situ; offline interfaces fully verified
+- No camera on the training machine, so live scripts cannot be tested there (offline interfaces
+  fully verified); on the camera-equipped machine `live_detect.py` passed a headless smoke test and
+  was verified on real face snapshots, while `test_gaze_live.py`'s statistics and protocol path are
+  verified — **real-person accuracy still to be measured**
 - MRL filename labels carry minor noise (~90–97% agreement reported); accuracy is a lower bound
 - Model A occasionally says closed_eye on open-but-downcast eyes (domain gap: MRL closed class
   includes downcast samples); observed & documented in the predict.py snapshot test — fixed by personalization
 - MRL is mostly non-Asian faces; Model B's self-collected data will cover our user population
 - `datasets/`, `runs/`, and videos are not committed; weights and datasets are fully
   reproducible from the scripts
+
+## 11. On-Machine Live Tools (camera required)
+
+| Script | Purpose | Output |
+|---|---|---|
+| `scripts/live_detect.py` | Live webcam detection: MediaPipe locates 478 points → crops both eyes → Model A (open/closed) + Model B (up/center/down) → overlays eye boxes, verdict panel and FPS | Window; press `S` to save into `runs/live_snapshots/` |
+| `scripts/test_gaze_live.py` | **Live gaze benchmark**: a green target dot appears (up/center/down), you follow it → per-frame predictions → accuracy + confusion matrix | `docs/gaze_test/`: `frames.csv`, `report.md`, `gaze_confusion_matrix.png` |
+
+```bash
+conda activate yolo
+python scripts/live_detect.py                             # Q quit, S snapshot
+python scripts/live_detect.py --camera 1 --conf 0.4       # other camera / looser threshold
+python scripts/test_gaze_live.py                          # 3 directions × 2 rounds ≈ 45 s, Q aborts
+python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # longer run
+```
+
+**Measured (CPU-only machine, no discrete GPU)**:
+
+- Full pipeline (MediaPipe locate + two models per eye) runs at **66 ms/frame ≈ 15 FPS** — plenty for verification
+- `live_detect.py`: headless 8-frame smoke test passed; verified on real face snapshots (face found,
+  2 eye boxes, both models produced verdicts)
+- `test_gaze_live.py`: statistics verified with synthetic predictions (accuracy/confusion counts correct),
+  full protocol path runs; **real-person accuracy still to be measured** — run it in front of the camera
+  and the report is generated automatically
+
+**Gating design**: gaze direction is meaningless while the eyes are closed, so Model B's output is gated by
+Model A in both scripts — `test_gaze_live.py` excludes closed-eye frames from scoring and reports the count
+separately; `live_detect.py` still shows the value but it must not be trusted when the eyes are closed.
+
+**Code convention**: `eye_boxes/eye_crop`, `top_pred` and `combine` mirror `predict.py` **exactly** —
+keep the copies in sync (noted in each script's header).
