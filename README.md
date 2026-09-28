@@ -82,8 +82,10 @@ yolo_model/
 │  ├─ eval_eye_accuracy.py          ⑥ 准确率评估：验证集逐张判定 vs 文件名标签，
 │  │                                   混淆矩阵 + MediaPipe 适用性探测 + 图表
 │  ├─ compare_yolo_vs_mediapipe.py  ⑦ 实时对比（需摄像头，本机无，保留备用）
-│  └─ collect_gaze_video.py         ⑧ 模型B素材自采工具（电脑摄像头+屏幕提示，
-│                                      输出到 gaze_captures/，备用）
+│  ├─ collect_gaze_video.py         ⑧ 模型B素材自采工具（电脑摄像头+屏幕提示，
+│  │                                   输出到 gaze_captures/，备用）
+│  └─ auto_label_phone_videos.py    ⑨ 手机视频自动打标（抽帧+裁眼+QC虹膜排序校验，
+│                                      已用合成视频端到端验证；输出 datasets/phone_gaze_yolo/）
 │
 ├─ phone_videos/                    模型B手机素材归档区（一人一文件夹，文件名带上/中/下）
 │  └─ 转发给拍摄的人.txt             可直接整段复制发微信群的大白话拍摄说明
@@ -97,6 +99,7 @@ yolo_model/
 │  ├─ dataset_sources.md            数据集查找渠道记录（网站/直链/许可/磁盘策略）
 │  ├─ ai_dev_resources.md           AI 开发网站与工具大全（文档/算力/标注/部署/学习资源）
 │  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
+│  ├─ integration.md                EyeWheelchairProject 接入指南（接口/阈值/安全）
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
 │
@@ -309,7 +312,9 @@ yolo_model/
 │  ├─ eval_eye_accuracy.py          ⑥ accuracy eval: per-image judgment vs filename labels,
 │  │                                   confusion matrix + MediaPipe applicability probe + charts
 │  ├─ compare_yolo_vs_mediapipe.py  ⑦ live head-to-head (needs camera; kept for later)
-│  └─ collect_gaze_video.py         ⑧ Model-B self-capture tool (webcam + on-screen prompts)
+│  ├─ collect_gaze_video.py         ⑧ Model-B self-capture tool (webcam + on-screen prompts)
+│  └─ auto_label_phone_videos.py    ⑨ phone-video auto-labeling (frame sampling + eye crops
+│                                      + iris-ordering QC; e2e verified on synthetic videos)
 │
 ├─ phone_videos/                    Model-B phone-footage archive (one folder per person;
 │  └─ 转发给拍摄的人.txt             copy-paste WeChat instructions for contributors
@@ -324,6 +329,7 @@ yolo_model/
 │  ├─ dataset_sources.md            where to find datasets (sites, direct links, licenses, disk policy)
 │  ├─ ai_dev_resources.md           AI-dev sites & tools catalog (docs/compute/labeling/deploy/learning)
 │  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
+│  ├─ integration.md                EyeWheelchairProject integration guide (contract/thresholds/safety)
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
 │
