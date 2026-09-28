@@ -72,16 +72,14 @@ configs/mrl_eye.yaml             YOLO 数据配置 / YOLO data config
 
 ## 注视方向数据采集 / Gaze data capture（阶段 6 素材）
 
-**详细要求与操作指南见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**
-（准备工作、逐步操作、硬性要求、自检清单、常见问题都在里面）。速查：
+**多人手机拍摄方案，详细指南见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)**。
 
-```bash
-conda activate yolo
-python scripts/collect_gaze_video.py            # 3 zones x 2 rounds x 20s ≈ 2 分钟
-```
+流程：拍摄者照"转发文案"每人拍 3 段（上看/中看/下看，每段 30s~1min，
+**头不动只动眼睛**）→ 微信"文件"方式发送 → 归档到
+`EyeWheelchairProject/data/phone_videos/每人/方向.mp4`（文件名带上/中/下字）→
+自动打标训练。转发文案：`EyeWheelchairProject/data/phone_videos/转发给拍摄的人.txt`。
 
-要点：空格开始、q 结束；**头不动只动眼睛**（唯一硬性要求）；正常眨眼；
-建议在 2~4 种光照/环境下各录一场。输出在 EyeWheelchairProject/data/raw_videos/。
+自采备选：`python scripts/collect_gaze_video.py`（电脑摄像头+屏幕提示，见 COMMANDS.md 第 9 节）。
 
 ## 与 EyeWheelchairProject 的关系 / Integration
 
