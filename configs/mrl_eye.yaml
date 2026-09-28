@@ -1,0 +1,8 @@
+# MRL Eye Dataset — YOLO 格式 / YOLO format（自动生成 / auto-generated）
+path: C:/Users/Guards/Desktop/yolo_model/datasets/mrl_eye_yolo
+train: images/train
+val: images/val
+nc: 2
+names:
+  0: open_eye
+  1: closed_eye
