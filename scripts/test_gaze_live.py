@@ -56,6 +56,45 @@ PHASE_TEXT = {        # 屏幕提示（含目标点该画在哪：y 比例）
     "look_down": ("垂眼向下看 / LOOK DOWN", 0.88),
 }
 
+# 注视方向 → 指令语义（与 predict.py / live_detect.py 一致）
+GAZE_ACTION = {"look_up": "FORWARD", "look_center": "STOP", "look_down": "BACKWARD"}
+CHANGE_STABLE_FRAMES = 2   # 新方向连续出现这么多帧才播报（防单帧抖动刷屏）
+
+
+class DirectionAnnouncer:
+    """方向变更播报器：只在"稳定确认的新方向"出现时产出一行，不逐帧刷屏。
+
+    调用关系：被 main() 每帧调用一次（update），返回 None 或一行待打印的文字。
+    三条规则（每条都能单独测）：
+      1. 无效帧（无人脸 / 闭眼）不参与判断，也不打断已播报的方向；
+      2. 新方向必须连续出现 CHANGE_STABLE_FRAMES 帧才作数（防单帧抖动）；
+      3. 与上次播报相同则不重复播报（状态没变就不打印）。
+    """
+
+    def __init__(self, stable_frames: int = CHANGE_STABLE_FRAMES) -> None:
+        self._stable_frames = stable_frames
+        self.current: str | None = None     # 已经播报出去的方向
+        self._pending: str | None = None    # 正在攒帧数的新方向
+        self._count = 0
+
+    def update(self, gaze_pred, conf: float, valid: bool) -> str | None:
+        if not valid or gaze_pred is None:
+            return None                     # 无效帧：不判断，也不清空已播报状态
+        if gaze_pred == self.current:
+            self._pending, self._count = None, 0
+            return None
+        if gaze_pred == self._pending:
+            self._count += 1
+        else:
+            self._pending, self._count = gaze_pred, 1
+        if self._count < self._stable_frames:
+            return None
+        previous, self.current = self.current, gaze_pred
+        self._pending, self._count = None, 0
+        action = GAZE_ACTION.get(gaze_pred, "STOP(fail-safe)")
+        return (f"[方向变更] {previous or '--'} → {gaze_pred}  "
+                f"conf={conf:.2f}  动作={action}")
+
 
 def eye_crops(frame, lms):
     """裁左右眼（与 predict.py / compare_yolo_vs_mediapipe.py 同款扩边）。"""
@@ -240,6 +279,7 @@ def main():
     phases = [p for _ in range(args.rounds) for p in PHASE_ORDER]
     rows, samples = [], []
     skipped = {"no_face": 0, "eyes_closed": 0}
+    announcer = DirectionAnnouncer()      # 方向变更只打印一次（边沿触发，见类的文档）
     ts_ms, frame_count = 0, 0
     t_start = time.perf_counter()
     phase_idx, phase_t0 = 0, time.perf_counter()
@@ -289,6 +329,10 @@ def main():
                 samples.append((phase, gaze_pred))
 
             frame_count += 1
+            # 方向变更播报：只在稳定确认的新方向出现时打印（闭眼/无人脸帧不算）
+            line = announcer.update(gaze_pred, gaze_conf, valid=(eye_state == "open_eye"))
+            if line:
+                print(f"{line}   @ {now - t_start:.1f}s")
             remain = max(0.0, args.look_sec - (now - phase_t0))
             fps = frame_count / max(now - t_start, 0.001)
             if not args.no_window:

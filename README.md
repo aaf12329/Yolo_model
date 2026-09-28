@@ -266,6 +266,16 @@ python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # 更长的测试
 **门控设计**：闭眼帧的"注视方向"没有物理意义，两个脚本里模型 B 的输出都由模型 A 门控——
 `test_gaze_live.py` 把闭眼帧不计分并单独统计；`live_detect.py` 面板照常显示，但闭眼时不可采信。
 
+**终端播报（边沿触发）**：`test_gaze_live.py` **只在方向发生变化时打印一行**，不逐帧刷屏：
+
+```
+[方向变更] look_center → look_up  conf=0.80  动作=FORWARD   @ 12.3s
+```
+
+- 新方向需**连续 2 帧**确认才播报（单帧抖动忽略）；同一方向不重复打印；闭眼/无人脸帧不参与判断
+- 播报内容含映射动作（`look_up→FORWARD` / `look_center→STOP` / `look_down→BACKWARD`），可直接观察控制语义
+- 注意模型 B 的类别是**上/中/下**，没有左右——左右方向由 EyeWheelchairProject 的 MediaPipe 虹膜方案负责
+
 **代码约定**：`eye_boxes/eye_crop`、`top_pred`、`combine` 三组函数与 `predict.py` **同款**，
 两处需同步修改（各脚本头部注释已标注）。
 
@@ -540,6 +550,19 @@ python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # longer run
 **Gating design**: gaze direction is meaningless while the eyes are closed, so Model B's output is gated by
 Model A in both scripts — `test_gaze_live.py` excludes closed-eye frames from scoring and reports the count
 separately; `live_detect.py` still shows the value but it must not be trusted when the eyes are closed.
+
+**Terminal announcements (edge-triggered)**: `test_gaze_live.py` prints **one line per direction change**,
+never per frame:
+
+```
+[方向变更] look_center → look_up  conf=0.80  动作=FORWARD   @ 12.3s
+```
+
+- A new direction must hold for **2 consecutive frames** to be announced (single-frame flicker ignored);
+  the same direction is never repeated; closed-eye / no-face frames do not participate
+- Each line includes the mapped action (`look_up→FORWARD` / `look_center→STOP` / `look_down→BACKWARD`)
+- Note Model B's classes are **up/center/down — there is no left/right**; left/right is handled by the
+  MediaPipe iris pipeline in EyeWheelchairProject
 
 **Code convention**: `eye_boxes/eye_crop`, `top_pred` and `combine` mirror `predict.py` **exactly** —
 keep the copies in sync (noted in each script's header).
