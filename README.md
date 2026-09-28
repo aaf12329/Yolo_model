@@ -81,6 +81,7 @@ yolo_model/
 │
 ├─ docs/
 │  ├─ yolo_tutorial.md              YOLO 入门教程：原理/结构/训练，全部用本项目实例讲解
+│  ├─ dataset_sources.md            数据集查找渠道记录（网站/直链/许可/磁盘策略）
 │  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
@@ -288,6 +289,7 @@ yolo_model/
 ├─ docs/
 │  ├─ yolo_tutorial.md              YOLO primer: principles/architecture/training, all
 │  │                                   illustrated with this repo's real artifacts
+│  ├─ dataset_sources.md            where to find datasets (sites, direct links, licenses, disk policy)
 │  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars

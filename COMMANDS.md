@@ -52,6 +52,10 @@ python scripts/verify_gpu.py
 
 ## 4. 下载数据集 / Download dataset
 
+> 数据集查找渠道与磁盘策略（解压 >10GB 放 `D:\yolo_datasets\`）统一记录在
+> [docs/dataset_sources.md](docs/dataset_sources.md)。
+> All dataset sources & the disk policy are catalogued in dataset_sources.md.
+
 MRL Eye Dataset（mrlEyes_2018_01，84,898 张眼部特写，睁眼/闭眼按文件名标注）：
 
 ```bash
