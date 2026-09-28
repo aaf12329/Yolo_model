@@ -30,7 +30,9 @@
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
 | 5 | 模型 A 训练（早停于第 22 轮，最佳第 13 轮，GPU 共 9.2 分钟） | ✅ |
 | 6 | 眨眼判定准确率评估 + MediaPipe 对比实验 | ✅ |
-| 7 | 模型 B：注视方向（等手机采集素材 → 自动打标 → 训练） | ⏸ 等素材 |
+| 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换 | 🔄 转换中 |
+| 8 | 模型 B 初版训练（Columbia Gaze bootstrap） | ⏳ 排队 |
+| 9 | 模型 B 个人化微调（等手机采集素材 → 自动打标 → 精调） | ⏸ 等素材 |
 
 ## 三、环境信息
 
@@ -78,6 +80,10 @@ yolo_model/
 │
 ├─ phone_videos/                    模型B手机素材归档区（一人一文件夹，文件名带上/中/下）
 │  └─ 转发给拍摄的人.txt             可直接整段复制发微信群的大白话拍摄说明
+│
+├─ data/                           数据来源与下载专用文件夹（详见其 README）
+│  ├─ README.md                    两个数据集的来源/许可/符号约定/下载指令
+│  └─ download_datasets.py         一键下载器（断点续传+C盘检查+体积校验+可选解压）
 │
 ├─ docs/
 │  ├─ yolo_tutorial.md              YOLO 入门教程：原理/结构/训练，全部用本项目实例讲解
@@ -146,17 +152,22 @@ yolo_model/
 - 权重：`runs/eye_yolo26n/weights/best.pt`（~6MB，不入库，训练可复现）
 - 输入约定：MediaPipe 眼眶裁剪图（含眉毛上下文）；输出：`open_eye` / `closed_eye` + 置信度
 
-## 六、模型 B：注视方向判定（规划中）
+## 六、模型 B：注视方向判定（数据已就位）
 
 - **目标**：三类 `look_up` / `look_center` / `look_down` → 上层映射 前进 / 停 / 后退
-- **为什么自己采数据**：公开数据集没有"注视方向+检测框"标注；
-  且方向判定必须贴合真实用户（眼型、眼镜、摄像头角度、光照）
-- **采集协议**（详见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)）：
-  每人手机拍 3 段视频（上看/中看/下看各 30s~1min，**头不动只动眼睛**），
-  微信"文件"方式发送，归档到 `phone_videos/一人一文件夹/`
-- **流水线**：视频 + 文件名方向 → MediaPipe 自动打标（脸检测→裁眼→虹膜位置核对）→
-  YOLO 格式 → 训练 YOLO26n → 曲线+报告 → 对接状态机
-- 启动条件：**≥3 人**（建议 5~8 人，含不同光照/眼镜状态）
+- **底座数据（已获取）**：Columbia Gaze Data Set——5,880 张、56 人、5 头姿 × 3 垂直
+  注视（0/±10°），21 人戴眼镜。**符号已目视验证：`-10V`=上看、`0V`=平视、
+  `10V`=下看**（正号表示视线下方，反直觉，写脚本时务必注意）。
+  来源/许可/下载方式见 [data/README.md](data/README.md)
+- **转换流水线**：18MP 原图缩放 → MediaPipe 裁左/右眼（每源图 2 个裁剪）→
+  3 类整图框 YOLO 数据（`scripts/prepare_columbia_gaze_dataset.py`，
+  预计约 1.1 万个裁剪，~20 分钟 CPU）
+- **个人化微调（等素材）**：每人手机拍 3 段视频（上看/中看/下看各 30s~1min，
+  **头不动只动眼睛**），微信"文件"方式发送，归档 `phone_videos/一人一文件夹/`
+  （协议与归档规则见 [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)，
+  启动门槛 ≥3 人，建议 5~8 人）
+- **流水线**：视频 + 文件名方向 → MediaPipe 自动打标 → YOLO 格式 → 在底座权重上
+  微调 → 曲线+报告 → 对接状态机
 
 ## 七、快速开始
 
@@ -164,6 +175,7 @@ yolo_model/
 conda activate yolo
 cd C:\Users\Guards\Desktop\yolo_model
 
+python data/download_datasets.py --dataset all --extract  # ⓪ 下载数据（断点续传+校验）
 python scripts/verify_gpu.py             # ① 验证 GPU 环境
 python scripts/prepare_mrl_dataset.py    # ② 数据集转换（已执行过，可重复）
 python scripts/train_eye.py              # ③ 训练模型A（复现）
@@ -287,6 +299,10 @@ yolo_model/
 ├─ phone_videos/                    Model-B phone-footage archive (one folder per person;
 │  └─ 转发给拍摄的人.txt             copy-paste WeChat instructions for contributors
 │
+├─ data/                           dataset sources & downloads (see its README)
+│  ├─ README.md                    sources / licenses / sign conventions / commands
+│  └─ download_datasets.py         one-shot downloader (resume + disk check + verify)
+│
 ├─ docs/
 │  ├─ yolo_tutorial.md              YOLO primer: principles/architecture/training, all
 │  │                                   illustrated with this repo's real artifacts
@@ -354,17 +370,22 @@ yolo_model/
 - Weights: `runs/eye_yolo26n/weights/best.pt` (~6 MB, not committed; training is reproducible)
 - Input contract: MediaPipe eye crops (with brow context); output: `open_eye` / `closed_eye` + confidence
 
-## 6. Model B: Gaze Direction (planned)
+## 6. Model B: Gaze Direction (data acquired)
 
 - **Goal**: 3 classes `look_up` / `look_center` / `look_down` → forward / stop / backward
-- **Why self-collected**: no public dataset ships gaze-direction detection labels, and the
-  judgment must match the real user (eye shape, glasses, camera angle, lighting)
-- **Protocol** (see [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md)):
-  each contributor records 3 phone clips (up/center/down, 30 s–1 min each, **head still,
-  eyes only**), sent via WeChat "file" mode, archived under `phone_videos/<person>/`
-- **Pipeline**: footage + filename direction → MediaPipe auto-labeling (face → eye crop →
-  iris-position cross-check) → YOLO format → train YOLO26n → curves + report → state machine
-- **Kick-off threshold**: ≥3 contributors (5–8 recommended, vary lighting/glasses)
+- **Bootstrap data (acquired)**: Columbia Gaze Data Set — 5,880 images, 56 subjects,
+  5 head poses × 3 vertical gaze (0/±10°), 21 wear glasses. **Sign convention visually
+  verified: `-10V` = up, `0V` = center, `10V` = down** (positive means below horizon —
+  counterintuitive; watch out in scripts). Sources/licenses/downloads: [data/README.md](data/README.md)
+- **Conversion pipeline**: downscale 18MP originals → MediaPipe crops left/right eye
+  (2 crops per source) → 3-class full-image-box YOLO data
+  (`scripts/prepare_columbia_gaze_dataset.py`, ~11k crops expected, ~20 min on CPU)
+- **Personalization (waiting)**: each contributor records 3 phone clips (up/center/down,
+  30 s–1 min each, **head still, eyes only**), sent via WeChat "file" mode, archived under
+  `phone_videos/<person>/` (protocol: [docs/gaze_data_collection_guide.md](docs/gaze_data_collection_guide.md);
+  kick-off threshold ≥3 contributors, 5–8 recommended)
+- **Pipeline**: footage + filename direction → MediaPipe auto-labeling → YOLO format →
+  fine-tune on bootstrap weights → curves + report → state machine
 
 ## 7. Quick Start
 
@@ -372,6 +393,7 @@ yolo_model/
 conda activate yolo
 cd C:\Users\Guards\Desktop\yolo_model
 
+python data/download_datasets.py --dataset all --extract  # ⓪ download datasets
 python scripts/verify_gpu.py             # ① verify GPU environment
 python scripts/prepare_mrl_dataset.py    # ② dataset conversion (idempotent)
 python scripts/train_eye.py              # ③ train Model A (reproduce)

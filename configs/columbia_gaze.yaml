@@ -1,0 +1,9 @@
+# Columbia Gaze — 眼部裁剪 YOLO 格式（自动生成 / auto-generated）
+path: C:/Users/Guards/Desktop/yolo_model/datasets/columbia_gaze_yolo
+train: images/train
+val: images/val
+nc: 3
+names:
+  0: look_up
+  1: look_center
+  2: look_down

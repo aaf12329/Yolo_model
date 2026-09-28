@@ -32,8 +32,9 @@
 | 19:47 | C | `yolo_model\datasets\mrlEyes_2018_01\` | 496MB | 解压 | 同上，84,898 张眼部特写 | ✅ |
 | 19:52 | C | `yolo_model\datasets\mrl_eye_yolo\` | 166MB* | 生成 | YOLO 格式数据（图片为硬链接指向解压目录，实际增量≈标签文本） | ✅ |
 | 20:10 | C | `yolo_model\runs\` | 29MB | 训练输出 | 模型 A 权重与曲线（best.pt 约 6MB） | ✅ |
-| 20:57 | C | `yolo_model\datasets\columbia_gaze\columbia_gaze_data_set.zip` | **2.2GB** | 下载中 | 模型 B 数据（Columbia Gaze，官方直链） | 🔄 约 21:10 已到 547MB |
+| 20:57 | C | `yolo_model\datasets\columbia_gaze\columbia_gaze_data_set.zip` | **2.2GB** | 下载 | 模型 B 数据（Columbia Gaze，官方直链） | ✅ 21:49 完成 |
 | 21:03 | D | `D:\yolo_datasets\` | 0（空目录） | 新建 | 预留：解压后 >10GB 的数据集统一放这里（当日约定） | ✅ |
+| 21:52 | C | `yolo_model\datasets\columbia_gaze\` 解压 | **2.45GB** | 解压 | 5,880 张 JPG（5184×3456）。实测解压体积 <10GB，按约定留 C 盘，未动 D 盘 | ✅ 已报备（C 盘 148.2G→145.7G） |
 
 \* du 把硬链接目标也计了一次；本目录真实增量是 labels 文本 + 少量非链接文件。
 
