@@ -7,10 +7,10 @@
 
 ## 1. 模型清单 / Models
 
-| 模型 | 权重（本项目仓库内） | 类别 | 用途 | 跨受试者准确率 |
+| 模型 | 权重（本仓库 `models/`，随 git 分发；训练原始输出在 `runs/…/weights/`） | 类别 | 用途 | 跨受试者准确率 |
 |---|---|---|---|---|
-| A：睁/闭眼 | `yolo_model/runs/eye_yolo26n/weights/best.pt`（ONNX 同目录 `best.onnx`，9.2MB） | `open_eye` / `closed_eye` | 眨眼确认 + 闭眼过久安全停止 | 94.33% |
-| B：注视方向 | `yolo_model/runs/gaze_yolo26n/weights/best.pt`（`best.onnx` 同理） | `look_up` / `look_center` / `look_down` | 上看=前进 / 中看=停 / 下看=后退（映射可调） | 93.62% |
+| A：睁/闭眼 | `yolo_model/models/eye_yolo26n.pt`（ONNX：`runs/eye_yolo26n/weights/best.onnx`，9.2MB） | `open_eye` / `closed_eye` | 眨眼确认 + 闭眼过久安全停止 | 94.33% |
+| B：注视方向 | `yolo_model/models/gaze_yolo26n.pt`（ONNX：`runs/gaze_yolo26n/weights/best.onnx` 同理） | `look_up` / `look_center` / `look_down` | 上看=前进 / 中看=停 / 下看=后退（映射可调） | 93.62% |
 
 两个权重都基于 YOLO26n（237 万参数），GPU 单张 <2ms，CPU 也可实时。
 
@@ -26,8 +26,8 @@
 #    水平扩 1.6 倍、垂直扩 2.2 倍（含眉毛上下文），参考 yolo_model/scripts/compare_yolo_vs_mediapipe.py 的 eye_boxes()
 # 3) 裁剪图送对应模型
 from ultralytics import YOLO
-eye_model  = YOLO(r"...\yolo_model\runs\eye_yolo26n\weights\best.pt")   # 模型A
-gaze_model = YOLO(r"...\yolo_model\runs\gaze_yolo26n\weights\best.pt")  # 模型B
+eye_model  = YOLO(r"...\yolo_model\models\eye_yolo26n.pt")    # 模型A
+gaze_model = YOLO(r"...\yolo_model\models\gaze_yolo26n.pt")   # 模型B
 
 r = eye_model.predict(eye_crop, imgsz=128, verbose=False)[0]
 cls = r.names[int(r.boxes.cls[int(r.boxes.conf.argmax())])]   # 'open_eye' / 'closed_eye'

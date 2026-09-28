@@ -36,7 +36,7 @@
 
 **阶段 8 结果 / Stage 8 results**（详见 [docs/training/summary_gaze.md](docs/training/summary_gaze.md)）：
 总判定准确率 **93.62%**（look_center 96.86% / look_down 96.00% / look_up 88.00%），
-mAP50-95=**0.9754**；权重 `runs/gaze_yolo26n/weights/best.pt`。
+mAP50-95=**0.9754**；权重已入库 `models/gaze_yolo26n.pt`（训练原始输出在 runs/）。
 图：`docs/comparison/columbia_gaze_confusion_matrix.png`、`columbia_gaze_accuracy_chart.png`。
 关键结论：down 几乎不会误判为 up（0 例）——**前进/后退不会互相窜**；
 主要误差是 up→center（+10° 上看幅度小），对控制语义无害且将由个人化微调修复。
@@ -62,7 +62,7 @@ yolo_model/
 ├─ README.md                        本文件：架构、进度、指标、规范（每阶段更新）
 ├─ COMMANDS.md                      全部指令速查（按阶段整理，含英文注释）
 ├─ requirements.txt                 依赖清单
-├─ .gitignore                       数据集/权重/视频不入库
+├─ .gitignore                       数据集/视频不入库；交付权重在 models/ 随 git 分发
 │
 ├─ configs/
 │  └─ mrl_eye.yaml                  模型A的 YOLO 数据配置（路径、2 类名）
@@ -108,8 +108,7 @@ yolo_model/
 │
 ├─ gaze_captures/                   （不入库）脚本自采的方向素材视频
 │
-└─ runs/                            （不入库）训练输出；模型A权重：
-                                    runs/eye_yolo26n/weights/best.pt
+└─ runs/                            （不入库）训练输出与曲线；交付权重已复制到 models/
 ```
 
 ## 五、模型 A：睁眼/闭眼判定（已交付）
@@ -160,7 +159,7 @@ yolo_model/
 
 ### 5.5 产物
 
-- 权重：`runs/eye_yolo26n/weights/best.pt`（~6MB，不入库，训练可复现）
+- 权重：`models/eye_yolo26n.pt`（~5MB，随 git 分发；训练原始输出在 runs/，可复现）
 - 输入约定：MediaPipe 眼眶裁剪图（含眉毛上下文）；输出：`open_eye` / `closed_eye` + 置信度
 
 ## 六、模型 B：注视方向判定（数据已就位）
@@ -294,14 +293,16 @@ yolo_model/
 ├─ README.md                        this file: architecture, progress, metrics (updated per stage)
 ├─ COMMANDS.md                      command reference organized by stage
 ├─ requirements.txt                 dependencies
-├─ .gitignore                       datasets / weights / videos stay out of git
+├─ .gitignore                       datasets / videos stay out of git; deliverable weights in models/ ARE committed
 │
 ├─ configs/
 │  └─ mrl_eye.yaml                  Model-A YOLO data config (paths, 2 class names)
 │
 ├─ models/
-│  └─ face_landmarker.task          MediaPipe 478-pt face model (copied from
-│                                   EyeWheelchairProject; reused for probing & auto-labeling)
+│  ├─ face_landmarker.task          MediaPipe 478-pt face model (copied from
+│  │                                   EyeWheelchairProject; reused for probing & auto-labeling)
+│  ├─ eye_yolo26n.pt                Model-A deliverable weights (committed, ~5MB)
+│  └─ gaze_yolo26n.pt               Model-B deliverable weights (committed, ~5MB)
 │
 ├─ scripts/                         every script has a call-graph header comment
 │  ├─ verify_gpu.py                 ① environment check: torch/cuda/ultralytics
@@ -337,8 +338,7 @@ yolo_model/
 │
 ├─ datasets/                        (not committed) MRL zip, extracted tree, YOLO-format dataset
 ├─ gaze_captures/                   (not committed) self-captured gaze footage
-└─ runs/                            (not committed) training output; Model-A weights:
-                                    runs/eye_yolo26n/weights/best.pt
+└─ runs/                            (not committed) training output & curves; deliverable weights copied to models/
 ```
 
 ## 5. Model A: Open/Closed Eye (delivered)
@@ -390,7 +390,7 @@ yolo_model/
 
 ### 5.5 Artifacts
 
-- Weights: `runs/eye_yolo26n/weights/best.pt` (~6 MB, not committed; training is reproducible)
+- Weights: `models/eye_yolo26n.pt` (~5 MB, committed; raw training output stays in runs/, reproducible)
 - Input contract: MediaPipe eye crops (with brow context); output: `open_eye` / `closed_eye` + confidence
 
 ## 6. Model B: Gaze Direction (data acquired)

@@ -20,7 +20,10 @@ gaze_captures/
 *.wmv
 
 # ---- 模型权重（大文件）/ model weights ----
+# 先忽略全部，再白名单放行交付权重（gitignore 后行覆盖前行，顺序不能颠倒）
+# ignore all first, then whitelist deliverables (later rules win — order matters)
 *.pt
+!models/*.pt
 *.onnx
 *.engine
 *.torchscript
