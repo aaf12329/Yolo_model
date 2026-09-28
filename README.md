@@ -30,9 +30,16 @@
 | 4 | 数据集转 YOLO 格式（按受试者划分 train/val） | ✅ |
 | 5 | 模型 A 训练（早停于第 22 轮，最佳第 13 轮，GPU 共 9.2 分钟） | ✅ |
 | 6 | 眨眼判定准确率评估 + MediaPipe 对比实验 | ✅ |
-| 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换 | 🔄 转换中 |
-| 8 | 模型 B 初版训练（Columbia Gaze bootstrap） | ⏳ 排队 |
+| 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换（11,760 裁剪） | ✅ |
+| 8 | 模型 B 初版训练（早停于第 27 轮，最佳第 18 轮，GPU 2.6 分钟） | ✅ |
 | 9 | 模型 B 个人化微调（等手机采集素材 → 自动打标 → 精调） | ⏸ 等素材 |
+
+**阶段 8 结果 / Stage 8 results**（详见 [docs/training/summary_gaze.md](docs/training/summary_gaze.md)）：
+总判定准确率 **93.62%**（look_center 96.86% / look_down 96.00% / look_up 88.00%），
+mAP50-95=**0.9754**；权重 `runs/gaze_yolo26n/weights/best.pt`。
+图：`docs/comparison/columbia_gaze_confusion_matrix.png`、`columbia_gaze_accuracy_chart.png`。
+关键结论：down 几乎不会误判为 up（0 例）——**前进/后退不会互相窜**；
+主要误差是 up→center（+10° 上看幅度小），对控制语义无害且将由个人化微调修复。
 
 ## 三、环境信息
 
@@ -232,7 +239,7 @@ eye activity into signals a wheelchair can act on:
 
 - **Model A (done)**: open-eye / closed-eye judgment → powers "blink = confirm" and
   "eyes closed too long = safety stop"
-- **Model B (planned)**: gaze-direction judgment (look up / center / down) → mapped to
+- **Model B (v1 trained)**: gaze-direction judgment (look up / center / down) → mapped to
   **forward / stop / backward**
 
 The interaction state machines, serial link, and Arduino firmware live in the
@@ -252,7 +259,15 @@ EyeWheelchairProject repo; this repo only trains, validates, and ships models.
 | 4 | Convert dataset to YOLO format (subject-wise train/val) | ✅ |
 | 5 | Train Model A (early stop @22, best @13, 9.2 min on GPU) | ✅ |
 | 6 | Accuracy benchmark vs MediaPipe | ✅ |
-| 7 | Model B: gaze direction (awaiting phone footage → auto-label → train) | ⏸ waiting |
+| 7 | Model B data: Columbia Gaze acquired (5,880 imgs) + eye-crop conversion (11,760 crops) | ✅ |
+| 8 | Model B v1 training (early stop @27, best @18, 2.6 min on GPU) | ✅ |
+| 9 | Model B personalization (awaiting phone footage → auto-label → fine-tune) | ⏸ waiting |
+
+**Stage 8 results** (see [docs/training/summary_gaze.md](docs/training/summary_gaze.md)):
+overall accuracy **93.62%** (look_center 96.86% / look_down 96.00% / look_up 88.00%),
+mAP50-95=**0.9754**; weights `runs/gaze_yolo26n/weights/best.pt`.
+Key finding: down is never misread as up (0 cases) — **forward/backward never swap**;
+main error is up→center (small +10° amplitude), harmless for control semantics.
 
 ## 3. Environment
 
