@@ -10,6 +10,12 @@
 > - ≥ 1GB 的删除 / any deletion ≥ 1 GB
 > - conda 环境等系统级安装 / system-level installs like conda environments
 >
+> **每次大动作前后必须检查 C 盘剩余容量**（C 盘是系统盘，2026-09-28 追加约定）：
+> 报备时附上当前剩余空间数字；大动作执行后复测并记录差额。
+> / Check C: free space before AND after every large operation (C: is the system
+> drive; agreed 2026-09-28): include the number in the announcement, re-check
+> afterwards and note the delta.
+>
 > 已获授权的常规位置 / pre-approved locations:
 > - `C:\Users\Guards\.conda\envs\yolo`（conda 环境）
 > - 本仓库内 `datasets/`、`runs/`、`gaze_captures/`（<10GB 的数据与产物）
