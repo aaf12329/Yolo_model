@@ -191,7 +191,8 @@ python scripts/prepare_mrl_dataset.py    # ② 数据集转换（已执行过，
 python scripts/train_eye.py              # ③ 训练模型A（复现）
 python scripts/plot_training.py          # ④ 画损失曲线
 python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
-# python scripts/collect_gaze_video.py   # ⑥（有摄像头时）自采方向素材
+python predict.py --image 某张人脸照片.jpg  # ⑥ 一行命令跑预测（权重已入库）
+# python scripts/collect_gaze_video.py   # ⑦（有摄像头时）自采方向素材
 ```
 
 全部指令逐条解释见 [COMMANDS.md](COMMANDS.md)。
@@ -227,6 +228,8 @@ python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
 
 - 本机无摄像头：实时脚本未实测，接口与离线链路已验证
 - MRL 文件名标签含少量噪声（文献报告一致率约 90~97%），故准确率为下限
+- 模型 A 在"睁眼但视线朝下"的画面上偶判为 closed_eye（MRL 闭眼类混有垂目样本的域差异），
+  个人化微调可修复；predict.py 实测快照时已观察到并如实记录
 - MRL 以非亚裔面孔为主；模型 B 自采数据将补足本群体特征
 - `datasets/`、`runs/`、视频均不入库；权重与数据集可由脚本完整复现
 
@@ -422,7 +425,8 @@ python scripts/prepare_mrl_dataset.py    # ② dataset conversion (idempotent)
 python scripts/train_eye.py              # ③ train Model A (reproduce)
 python scripts/plot_training.py          # ④ plot loss curves
 python scripts/eval_eye_accuracy.py      # ⑤ accuracy eval + comparison charts
-# python scripts/collect_gaze_video.py   # ⑥ (camera required) capture gaze footage
+python predict.py --image some_face.jpg  # ⑥ one-command prediction (weights committed)
+# python scripts/collect_gaze_video.py   # ⑦ (camera required) capture gaze footage
 ```
 
 Every command explained line-by-line in [COMMANDS.md](COMMANDS.md).
@@ -456,6 +460,8 @@ One commit per stage, **bilingual messages** (Chinese first, then English):
 
 - No camera on this machine: live scripts untested in situ; offline interfaces fully verified
 - MRL filename labels carry minor noise (~90–97% agreement reported); accuracy is a lower bound
+- Model A occasionally says closed_eye on open-but-downcast eyes (domain gap: MRL closed class
+  includes downcast samples); observed & documented in the predict.py snapshot test — fixed by personalization
 - MRL is mostly non-Asian faces; Model B's self-collected data will cover our user population
 - `datasets/`, `runs/`, and videos are not committed; weights and datasets are fully
   reproducible from the scripts
