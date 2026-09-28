@@ -80,6 +80,7 @@ yolo_model/
 │  └─ 转发给拍摄的人.txt             可直接整段复制发微信群的大白话拍摄说明
 │
 ├─ docs/
+│  ├─ yolo_tutorial.md              YOLO 入门教程：原理/结构/训练，全部用本项目实例讲解
 │  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
@@ -285,6 +286,8 @@ yolo_model/
 │  └─ 转发给拍摄的人.txt             copy-paste WeChat instructions for contributors
 │
 ├─ docs/
+│  ├─ yolo_tutorial.md              YOLO primer: principles/architecture/training, all
+│  │                                   illustrated with this repo's real artifacts
 │  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
