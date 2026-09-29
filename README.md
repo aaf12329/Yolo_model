@@ -104,6 +104,7 @@ yolo_model/
 │  ├─ ai_dev_resources.md           AI 开发网站与工具大全（文档/算力/标注/部署/学习资源）
 │  ├─ gaze_data_collection_guide.md 模型B采集指南（手机多人版，含转发文案与归档规则）
 │  ├─ integration.md                EyeWheelchairProject 接入指南（接口/阈值/安全）
+│  ├─ results_explained.md          结果解读手册：每个模型/每张图是什么、原理
 │  ├─ training_journey.md           训练全程复盘：数据集→训练→评估，问题→根因→解决→预防
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
@@ -182,6 +183,9 @@ yolo_model/
   启动门槛 ≥3 人，建议 5~8 人）
 - **流水线**：视频 + 文件名方向 → MediaPipe 自动打标 → YOLO 格式 → 在底座权重上
   微调 → 曲线+报告 → 对接状态机
+- **5 类扩展版**（`models/gaze5_yolo26s.pt`，80.90%）：加入 look_left/look_right
+  （主轴优先标注+翻转互换增强），center 因"注视空间一个点"结构性偏弱（42%），
+  逐图解读见 [docs/results_explained.md](docs/results_explained.md)
 
 ## 七、快速开始
 
@@ -351,8 +355,9 @@ yolo_model/
 ├─ models/
 │  ├─ face_landmarker.task          MediaPipe 478-pt face model (copied from
 │  │                                   EyeWheelchairProject; reused for probing & auto-labeling)
-│  ├─ eye_yolo26n.pt                Model-A deliverable weights (committed, ~5MB)
-│  └─ gaze_yolo26s.pt               Model-B deliverable weights (committed, ~20MB)
+│  ├─ eye_yolo26n.pt                Model-A deliverable weights (2-class, 94.33%)
+│  ├─ gaze_yolo26s.pt               Model-B deliverable weights (3-class, 95.62%, primary)
+│  └─ gaze5_yolo26s.pt              Model-B extended weights (5-class w/ left-right, 80.90%)
 │
 ├─ scripts/                         every script has a call-graph header comment
 │  ├─ verify_gpu.py                 ① environment check: torch/cuda/ultralytics
@@ -387,6 +392,7 @@ yolo_model/
 │  ├─ ai_dev_resources.md           AI-dev sites & tools catalog (docs/compute/labeling/deploy/learning)
 │  ├─ gaze_data_collection_guide.md Model-B collection guide (multi-person phone edition)
 │  ├─ integration.md                EyeWheelchairProject integration guide (contract/thresholds/safety)
+│  ├─ results_explained.md          results walkthrough: what each model & figure means
 │  ├─ training_journey.md           full journey retrospective: datasets→training→eval, problems→fixes
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
@@ -464,6 +470,9 @@ yolo_model/
   kick-off threshold ≥3 contributors, 5–8 recommended)
 - **Pipeline**: footage + filename direction → MediaPipe auto-labeling → YOLO format →
   fine-tune on bootstrap weights → curves + report → state machine
+- **5-class extended** (`models/gaze5_yolo26s.pt`, 80.90%): adds look_left/look_right
+  (dominant-axis labeling + flip-swap augmentation); center is structurally weak (42%) —
+  figure-by-figure walkthrough in [docs/results_explained.md](docs/results_explained.md)
 
 ## 7. Quick Start
 

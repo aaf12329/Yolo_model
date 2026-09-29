@@ -87,7 +87,7 @@ def main():
     print(f"设备 / device: {'GPU ' + torch.cuda.get_device_name(0) if device == 0 else 'CPU'}")
 
     eye_model = YOLO(str(ROOT / "models" / "eye_yolo26n.pt"))
-    gaze_model = YOLO(str(ROOT / "models" / "gaze_yolo26s.pt"))
+    gaze_model = YOLO(str(ROOT / "models" / "gaze5_yolo26s.pt"))
 
     face_lm = None
     if not args.raw:
@@ -149,9 +149,10 @@ def main():
                                      for v in result["eyes"].values()])
         result["final"] = {"eye": eye_state, "eye_conf": round(eye_cf, 3),
                            "gaze": gaze_dir, "gaze_conf": round(gaze_cf, 3)}
-        # 指令语义 / control semantics（映射可按上层状态机调整）
+        # 指令语义 / control semantics（5 类，映射可按上层状态机调整）
         result["action_hint"] = {"look_up": "FORWARD", "look_center": "STOP",
-                                 "look_down": "BACKWARD"}.get(gaze_dir, "STOP(fail-safe)")
+                                 "look_down": "BACKWARD", "look_left": "TURN_LEFT",
+                                 "look_right": "TURN_RIGHT"}.get(gaze_dir, "STOP(fail-safe)")
 
         dst = out_dir / f"annotated_{img_path.name}"
         cv2.imwrite(str(dst), frame)

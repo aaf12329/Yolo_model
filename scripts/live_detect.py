@@ -32,8 +32,49 @@ SNAPSHOT_DIR = ROOT / "runs" / "live_snapshots"
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
 RIGHT_EYE = [362, 385, 387, 263, 373, 380]
 
-# 注视方向 → 指令语义（同 predict.py 的 action_hint / control semantics）
-GAZE_ACTION = {"look_up": "FORWARD", "look_center": "STOP", "look_down": "BACKWARD"}
+# 注视方向 → 指令语义（5 类版 / same as predict.py）
+GAZE_ACTION = {
+    "look_up": "FORWARD", "look_center": "STOP", "look_down": "BACKWARD",
+    "look_left": "TURN_LEFT", "look_right": "TURN_RIGHT",
+}
+GAZE_ZH = {"look_up": "上看", "look_center": "直视", "look_down": "下看",
+           "look_left": "看左", "look_right": "看右"}
+
+
+class DirectionAnnouncer:
+    """注视状态"变化播报器"：只在稳定确认的新方向出现时 print 一行，不逐帧刷屏。
+
+    规则（移植自 test_gaze_live.py 的同款设计，经合成序列验证）：
+      1. 无效帧（无人脸/闭眼）不参与判断，也不打断已播报的方向；
+      2. 新方向必须连续出现 stable_frames 帧才作数（防单帧抖动）；
+      3. 同方向不重复播报；首个有效方向也会播报一次（从"--"到有方向也是变化）。
+    """
+
+    def __init__(self, stable_frames: int = 2):
+        self.stable_frames = stable_frames
+        self.current = None      # 已播报的方向
+        self._pending = None     # 攒帧中的新方向
+        self._count = 0
+
+    def update(self, gaze_pred: str | None, valid: bool) -> str | None:
+        if not valid or gaze_pred is None:
+            self._pending, self._count = None, 0
+            return None
+        if gaze_pred == self.current:
+            self._pending, self._count = None, 0
+            return None
+        if gaze_pred == self._pending:
+            self._count += 1
+        else:
+            self._pending, self._count = gaze_pred, 1
+        if self._count >= self.stable_frames:
+            previous = GAZE_ZH.get(self.current, "无/刚启动")
+            self.current = gaze_pred
+            self._pending, self._count = None, 0
+            action = GAZE_ACTION.get(gaze_pred, "STOP(fail-safe)")
+            return (f"[注视变化] {previous} → {GAZE_ZH.get(gaze_pred, gaze_pred)}"
+                    f"  |  动作: {action}")
+        return None
 
 
 def eye_boxes(lms, w, h):
@@ -111,6 +152,8 @@ def main():
                     help="处理这么多帧后自动退出（0=一直跑，自检用 / auto-stop for smoke tests）")
     ap.add_argument("--no-window", action="store_true",
                     help="不弹窗口只打印结论（自检用 / headless smoke test）")
+    ap.add_argument("--stable-frames", type=int, default=2,
+                    help="新方向连续多少帧才播报变化（防抖 / edge-trigger debounce）")
     args = ap.parse_args()
 
     import torch
@@ -119,7 +162,8 @@ def main():
 
     print("加载模型 / loading models...")
     eye_model = YOLO(str(ROOT / "models" / "eye_yolo26n.pt"))
-    gaze_model = YOLO(str(ROOT / "models" / "gaze_yolo26n.pt"))
+    gaze_model = YOLO(str(ROOT / "models" / "gaze5_yolo26s.pt"))
+    announcer = DirectionAnnouncer(args.stable_frames)
     import mediapipe as mp
     from mediapipe.tasks import python as mp_python
     from mediapipe.tasks.python import vision as mp_vision
@@ -132,6 +176,9 @@ def main():
 
     cap = open_camera(args.camera)
     print("实时检测已启动：Q 退出，S 存截图。CPU 上约 2~5 FPS 属正常。")
+    print("注视状态变化时会打印一行播报（连续 %d 帧确认）；动作映射：%s"
+          % (args.stable_frames,
+             " / ".join(f"{k}→{v}" for k, v in GAZE_ACTION.items())))
     frame_count = 0
     t0 = time.perf_counter()
     try:
@@ -139,8 +186,9 @@ def main():
             ok, frame = cap.read()
             if not ok:
                 raise RuntimeError("摄像头读取失败 / camera read failed")
-            frame = cv2.flip(frame, 1)          # 水平镜像，符合照镜子体感
             h, w = frame.shape[:2]
+            # ⚠️ 模型必须吃未镜像帧：镜像会把"看左"的外观变成"看右"，左右语义反转。
+            # 镜像只用于显示（照镜子体感），显示层坐标做 x 翻转换算。
 
             mp_img = mp.Image(image_format=mp.ImageFormat.SRGB,
                               data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -165,12 +213,16 @@ def main():
             frame_count += 1
             fps = frame_count / max(time.perf_counter() - t0, 0.001)
             if not args.no_window:
-                draw_overlay(frame, boxes, eye_state, eye_cf, gaze_dir, gaze_cf, fps)
-                cv2.imshow("live detect | Q quit | S snapshot", frame)
+                # 显示层镜像（体感），框坐标同步 x 翻转；文字在翻转后的图上绘制，不会反
+                disp = cv2.flip(frame, 1)
+                disp_boxes = [(w - x1, y0, w - x0, y1) for (x0, y0, x1, y1) in boxes]
+                draw_overlay(disp, disp_boxes, eye_state, eye_cf, gaze_dir, gaze_cf, fps)
+                cv2.imshow("live detect | Q quit | S snapshot", disp)
 
-            action = GAZE_ACTION.get(gaze_dir, "STOP(fail-safe)" if gaze_dir else "--")
-            print(f"[{frame_count:04d}] eye={eye_state or '--'}({eye_cf:.2f})  "
-                  f"gaze={gaze_dir or '--'}({gaze_cf:.2f})  ->  {action}")
+            # 终端播报：只在稳定确认的状态变化时打印（用户要求）
+            line = announcer.update(gaze_dir, valid=(eye_state == "open_eye"))
+            if line:
+                print(f"[{frame_count:04d}] {line}")
 
             if args.max_frames and frame_count >= args.max_frames:
                 print(f"已处理 {frame_count} 帧，自动退出（--max-frames）")

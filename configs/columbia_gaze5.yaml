@@ -1,0 +1,11 @@
+# Columbia Gaze 5 类 v2（主轴优先+翻转互换增强，自动生成 / auto-generated）
+path: C:/Users/Guards/Desktop/yolo_model/datasets/columbia_gaze5_yolo
+train: images/train
+val: images/val
+nc: 5
+names:
+  0: look_up
+  1: look_center
+  2: look_down
+  3: look_left
+  4: look_right

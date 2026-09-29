@@ -290,7 +290,8 @@ def main():
             ok, frame = cap.read()
             if not ok:
                 raise SystemExit("读帧失败 / frame read failed")
-            frame = cv2.flip(frame, 1)
+            # ⚠️ frame 保持未镜像：模型吃原始帧（镜像会把左/右语义反转）；
+            # 镜像仅用于显示（下面 disp），绿点在水平中线不受影响。
             now = time.perf_counter()
             if now - phase_t0 >= args.look_sec:
                 phase_idx += 1
@@ -336,8 +337,9 @@ def main():
             remain = max(0.0, args.look_sec - (now - phase_t0))
             fps = frame_count / max(now - t_start, 0.001)
             if not args.no_window:
-                cv2.imshow("gaze test | Q abort", draw_stage(frame, phase, remain, gaze_pred,
-                                                            gaze_conf, eye_state, fps))
+                disp = cv2.flip(frame, 1)   # 显示用镜像（体感），绿点在中线不受影响
+                cv2.imshow("gaze test | Q abort", draw_stage(disp, phase, remain, gaze_pred,
+                                                             gaze_conf, eye_state, fps))
             if args.max_frames and frame_count >= args.max_frames:
                 print(f"已处理 {frame_count} 帧，自动退出（--max-frames）")
                 break

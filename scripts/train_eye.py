@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--imgsz", type=int, default=128, help="MRL 是小尺寸特写图 / close-ups are tiny")
     ap.add_argument("--batch", type=int, default=0, help="0 = 自动 / auto")
     ap.add_argument("--model", default="yolo26n.pt")
+    ap.add_argument("--fliplr", type=float, default=0.5,
+                    help="水平翻转增强概率。含左/右方向类时必须设 0（翻转会把左右标签互污）")
     args = ap.parse_args()
 
     model = YOLO(args.model)
@@ -42,6 +44,7 @@ def main():
         exist_ok=True,
         patience=10,
         plots=True,
+        fliplr=args.fliplr,
     )
     print("训练完成，结果目录 / done, results dir:", ROOT / "runs" / args.name)
 
