@@ -36,6 +36,17 @@ python -c "import torch; print(torch.__version__, torch.cuda.is_available(), tor
 # 期望输出类似 / expect like: 2.11.0+cu128 True NVIDIA GeForce RTX 5060 Ti
 ```
 
+> **无独显的机器 / CPU-only machine**（2026-09-29 追加）：直接从 PyPI 装 CPU 构建，
+> 版本号相同、API 一致，只是推理/训练慢；不要再加 cu128 的 --index-url。
+> / On a machine without a discrete GPU, install the CPU build from PyPI — same
+> version, same API, just slower; drop the cu128 --index-url.
+
+```bash
+python -m pip install torch==2.11.0 torchvision==0.26.0
+# 期望输出类似 / expect like: 2.11.0+cpu False
+# 实测（D:\Anaconda\envs\yolo，含全部 requirements）：环境共 1.3GB
+```
+
 ## 3. 安装 YOLO26（ultralytics）/ Install YOLO26
 
 ```bash
@@ -123,14 +134,41 @@ python scripts/collect_gaze_video.py --seconds 15 --rounds 3 --camera 1
 操作要点：空格开始、q 结束；**头不动只动眼睛**；正常眨眼；尽量在真实使用光照下录。
 Key points: SPACE to start, q to quit; keep head still (eyes only); natural blinks; record in real lighting.
 
-## 11. 训练时监控 GPU / Monitor GPU during training
+## 11. 摄像头实时检测 / Live webcam detection
+
+```bash
+python scripts/live_detect.py                             # 摄像头 0，MediaPipe 定位 + 模型A/B 判定
+python scripts/live_detect.py --camera 1 --conf 0.4       # 换摄像头 / 放宽阈值
+```
+
+窗口叠加眼框 + 结论面板（EYE/GAZE/ACTION/FPS）；**Q 退出、S 截图**（存 `runs/live_snapshots/`）。
+当前接入 5 类模型 `models/gaze5_yolo26s.pt`（含左右，动作映射含 TURN_LEFT/RIGHT）。
+Overlay shows eye boxes + verdict panel; **Q quit, S snapshot** (into `runs/live_snapshots/`).
+Currently wired to the 5-class model `models/gaze5_yolo26s.pt` (left/right included).
+
+## 12. 注视方向实测 / Live gaze benchmark
+
+```bash
+python scripts/test_gaze_live.py                          # 3 方向 × 2 轮 ≈ 45 秒，Q 中止
+python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # 更长 / longer run
+```
+
+跟随屏幕绿点看（上/中/下），**头不动只动眼睛**；结束自动生成 `docs/gaze_test/` 下的
+`report.md`（准确率 + 混淆矩阵）、`frames.csv`、`gaze_confusion_matrix.png`。
+主控模型为主 `models/gaze_yolo26s.pt`（3 类 95.62%）。闭眼帧经模型 A 门控不计分；
+**终端边沿播报**：方向稳定变化时才打印一行（新方向需连续 2 帧确认）。
+Follow the green dot (up/center/down), head still. Outputs land in `docs/gaze_test/`.
+Closed-eye frames are gated by Model A and not scored; the terminal prints one line
+per **stable** direction change (2-frame confirmation).
+
+## 13. 训练时监控 GPU / Monitor GPU during training
 
 ```bash
 nvidia-smi -l 2        # Linux/Git Bash 每 2 秒刷新 / refresh every 2s
 nvidia-smi             # 单次查看 / one shot
 ```
 
-## 12. Git 提交规范 / Git commit convention
+## 14. Git 提交规范 / Git commit convention
 
 每个阶段一次提交，注释中英双语 / one commit per stage, bilingual messages:
 

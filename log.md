@@ -38,6 +38,18 @@
 
 \* du 把硬链接目标也计了一次；本目录真实增量是 labels 文本 + 少量非链接文件。
 
+## 2026-09-29
+
+| 时间 | 盘 | 路径 | 大小 | 操作 | 用途 | 状态 |
+|---|---|---|---|---|---|---|
+| 23:15 | D | `D:\Anaconda\envs\yolo` | **1.3GB** | 新建 | 有摄像头机器的 conda 环境：Python 3.10.21 + torch 2.11.0 **CPU 构建** + ultralytics 8.4.164 + mediapipe 1.0.1（requirements 逐项同版本；无独显故不用 cu128） | ✅ |
+| 23:20 | C | `C:\Users\AAF12\Desktop\Yolo_model\` | ~1MB | 克隆 | 本仓库完整克隆到有摄像头机器（此前只有训练机一份） | ✅ |
+| 23:30 | C | `yolo_model\scripts\live_detect.py`、`test_gaze_live.py` | <0.1MB | 新建 | 实时检测 + 注视方向实测两个脚本；CPU 全管线实测 66ms/帧 ≈ 15FPS | ✅ |
+
+> 备注：本机（有摄像头、无独显）负责**实时工具与验证**；训练仍回训练机（GPU）。
+> 当日修复：test_gaze_live.py 指向的 gaze_yolo26n.pt 已被 s 版替换，改为加载主控 3 类版 gaze_yolo26s.pt。
+> 注：预授权位置清单里的训练机路径（`C:\Users\Guards\...`）在本机不存在；本机环境装在 D 盘 Anaconda 默认位置。
+
 ## 待执行 / Planned
 
 | 盘 | 路径 | 预计大小 | 操作 | 条件 |

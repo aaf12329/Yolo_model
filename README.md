@@ -33,6 +33,7 @@
 | 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换（11,760 裁剪） | ✅ |
 | 8 | 模型 B 训练（n 版 93.62% → 容量对比后升级 s 版 **95.62%**） | ✅ |
 | 9 | 模型 B 个人化微调（等手机采集素材 → 自动打标 → 精调） | ⏸ 等素材 |
+| 10 | 有摄像头机器：实时工具落地（`live_detect.py` + `test_gaze_live.py`）+ CPU 环境 + 双机同步 | 🔶 通路已验证（CPU 15FPS、真实人脸截图），**真人实测待补** |
 
 **阶段 8 结果 / Stage 8 results**（详见 [docs/training/summary_gaze.md](docs/training/summary_gaze.md)）：
 总判定准确率 **93.62%**（look_center 96.86% / look_down 96.00% / look_up 88.00%），
@@ -326,6 +327,7 @@ EyeWheelchairProject repo; this repo only trains, validates, and ships models.
 | 7 | Model B data: Columbia Gaze acquired (5,880 imgs) + eye-crop conversion (11,760 crops) | ✅ |
 | 8 | Model B training (n 93.62% → upgraded to s **95.62%** after capacity test) | ✅ |
 | 9 | Model B personalization (awaiting phone footage → auto-label → fine-tune) | ⏸ waiting |
+| 10 | Camera machine: live tooling (`live_detect.py` + `test_gaze_live.py`) + CPU env + two-machine sync | 🔶 paths verified (CPU 15 FPS, real face snapshots) — **real-person run pending** |
 
 **Stage 8 results** (see [docs/training/summary_gaze.md](docs/training/summary_gaze.md)):
 overall accuracy **93.62%** (look_center 96.86% / look_down 96.00% / look_up 88.00%),
