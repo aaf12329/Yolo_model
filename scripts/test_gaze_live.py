@@ -192,7 +192,8 @@ def write_files(rows, samples, skipped, args, elapsed):
         "地面真值 = 屏幕目标点位置（协议法）。闭眼帧经模型 A 门控后不计分。",
         "",
         f"- 计分帧 / counted: **{m['n']}**　"
-        f"未计分 / skipped: 无人脸 {skipped['no_face']}，闭眼 {skipped['eyes_closed']}",
+        f"未计分 / skipped: 无人脸 {skipped['no_face']}，闭眼 {skipped['eyes_closed']}"
+        + ("（门控已关闭 / gate off）" if args.no_gate else ""),
         f"- **总准确率 / overall accuracy: {m['acc']*100:.1f}%**",
         "",
         "| 目标 / target | 准确率 / accuracy |",
@@ -251,6 +252,11 @@ def main():
     ap.add_argument("--max-frames", type=int, default=0,
                     help="处理这么多帧后自动退出（0=按协议跑完；自检用）")
     ap.add_argument("--no-window", action="store_true", help="不弹窗口（自检用）")
+    ap.add_argument("--no-gate", action="store_true",
+                    help="关闭模型A闭眼门控：闭眼帧也计分（诊断模型A误判时用，2026-09-29 实测"
+                         "93%% 帧被门控误杀，根因=眼镜反光+低头姿态的域差）")
+    ap.add_argument("--dump-crops", type=int, default=0,
+                    help="每 N 帧把眼部裁剪图存到 docs/gaze_test/crops/<阶段>/（诊断模型输入质量用）")
     args = ap.parse_args()
     if args.look_sec <= 2 * BUFFER:
         raise SystemExit(
@@ -321,9 +327,14 @@ def main():
             if not res.face_landmarks:
                 skipped["no_face"] += 1
                 counted = "skip"
-            elif eye_state != "open_eye":
+            elif eye_state != "open_eye" and not args.no_gate:
                 skipped["eyes_closed"] += 1
-                counted = "skip"          # 闭眼帧：注视方向无意义，不计分
+                counted = "skip"          # 闭眼帧：注视方向无意义，不计分（--no-gate 关闭此门控）
+            if res.face_landmarks and args.dump_crops and frame_count % args.dump_crops == 0:
+                crop_dir = OUT_DIR / "crops" / phase
+                crop_dir.mkdir(parents=True, exist_ok=True)
+                for side, c in zip(("L", "R"), eye_crops(frame, res.face_landmarks[0])):
+                    cv2.imwrite(str(crop_dir / f"f{frame_count:05d}_{side}.jpg"), c)
             rows.append([phase, counted, eye_state, round(eye_conf, 3), gaze_pred,
                          round(gaze_conf, 3), round(ms, 1)])
             if counted == "count" and gaze_pred is not None:

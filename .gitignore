@@ -11,6 +11,10 @@ runs/
 gaze_captures/
 *.zip
 
+# ---- 人脸/眼部裁剪诊断图（隐私：不入库，只留本机）/ face & eye crops stay local (privacy) ----
+docs/gaze_test/crops/
+docs/gaze_test/crops_diagnostic/
+
 # ---- 采集视频（素材只留本机）/ collected footage stays local ----
 *.mp4
 *.mov

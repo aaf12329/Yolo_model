@@ -287,10 +287,41 @@ python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # 更长的测试
 
 - 新方向需**连续 2 帧**确认才播报（单帧抖动忽略）；同一方向不重复打印；闭眼/无人脸帧不参与判断
 - 播报内容含映射动作（`look_up→FORWARD` / `look_center→STOP` / `look_down→BACKWARD`），可直接观察控制语义
-- 注意模型 B 的类别是**上/中/下**，没有左右——左右方向由 EyeWheelchairProject 的 MediaPipe 虹膜方案负责
+- 注意：**3 类主控版**（`gaze_yolo26s.pt`，test_gaze_live.py 用的）类别只有上/中/下；
+  **5 类实验版**（`gaze5_yolo26s.pt`，live_detect.py 已接入）才含左右
 
 **代码约定**：`eye_boxes/eye_crop`、`top_pred`、`combine` 三组函数与 `predict.py` **同款**，
 两处需同步修改（各脚本头部注释已标注）。
+
+## 十二、模型改进路线（2026-09-29 首次真人实测后制定）
+
+**实测结论**：`test_gaze_live.py` 管线本身跑通——418 帧、约 11 FPS、全程检出人脸、双模型都
+在出结果。但 **93% 的帧被模型 A 门控判为"闭眼"跳过，模型 B 没有测成**；过门控的 20 帧里
+19 帧预测 look_up。另有一个输入质量事实：本摄像头裁出的眼部特写仅约 **77×28 像素**且模糊
+（对比 MRL 83×83 / Columbia 高清裁剪，域差很大）。
+
+改进按下面顺序做，每步都带验收方式：
+
+1. **门控诊断（下一步，零代码改动）**：
+   `python scripts/test_gaze_live.py --no-gate --dump-crops 30`
+   - `--no-gate`：闭眼帧也计分，拿到模型 B 的全量预测（报告会标注"门控已关闭"）
+   - `--dump-crops 30`：每 30 帧存一对眼部裁剪到 `docs/gaze_test/crops/`（gitignore，隐私）
+   - 判读：若 frames.csv 里 eye_pred 大面积 closed、而裁剪图里眼睛明显睁开 →
+     模型 A 跨人域差实锤，走第 3 步；若裁剪图里眼睛确实闭着或小得看不清 → 先做第 2 步
+2. **输入质量与几何**：摄像头抬到与眼睛平齐；必要时提高摄像头分辨率——
+   目标是把眼部裁剪从 ~77×28 提到 ≥120×60；检查对焦与光照
+3. **个人化微调（阶段 9，治本）**：用**测试者本人**的素材精调模型 A 与模型 B——
+   - 采集：`scripts/collect_gaze_video.py`（本机已可用）或手机拍摄（`phone_videos/`，
+     指南见 docs/gaze_data_collection_guide.md）
+   - 打标：`scripts/auto_label_phone_videos.py`（虹膜排序 QC）
+   - 训练：`scripts/train_eye.py` 流程；**翻转增强必须标签互换**（5 类版教训：
+     左看图翻转后标签必须换成右看，否则左右互相污染）
+   - 数据量：每人每方向 ≥200 张裁剪起步，睁眼/闭眼类保持均衡
+4. **门控策略演进**：a) 模型 A 用本人数据精调后继续当门控；b) 改用 EAR 保守门控
+   （MediaPipe 现成 EAR，低于 0.08 才算"确定闭眼"，无需个人校准）；c) 两者取与。
+   用 frames.csv 的 skip 比例与实测准确率对比后定。
+5. **回归验收（每次模型变动必做）**：`test_gaze_live.py` 协议法——总准确率不降、
+   混淆矩阵不出现 up↔down / left↔right 互窜、门控 skip 比例回落到 <30%。
 
 ---
 
@@ -588,8 +619,41 @@ never per frame:
 - A new direction must hold for **2 consecutive frames** to be announced (single-frame flicker ignored);
   the same direction is never repeated; closed-eye / no-face frames do not participate
 - Each line includes the mapped action (`look_up→FORWARD` / `look_center→STOP` / `look_down→BACKWARD`)
-- Note Model B's classes are **up/center/down — there is no left/right**; left/right is handled by the
-  MediaPipe iris pipeline in EyeWheelchairProject
+- Note: the **3-class primary model** (`gaze_yolo26s.pt`, used by test_gaze_live.py) only has up/center/down;
+  the **5-class experimental model** (`gaze5_yolo26s.pt`, wired into live_detect.py) adds left/right
 
 **Code convention**: `eye_boxes/eye_crop`, `top_pred` and `combine` mirror `predict.py` **exactly** —
 keep the copies in sync (noted in each script's header).
+
+## 12. Model Improvement Roadmap (after the first real-person run, 2026-09-29)
+
+**What the first live run showed**: the `test_gaze_live.py` pipeline itself works — 418 frames, ~11 FPS,
+a face detected throughout, both models producing output. But **93% of frames were gated out as "closed"
+by Model A**, so Model B was never really tested; of the 20 frames that passed, 19 predicted look_up.
+One input-quality fact: the webcam's eye crops are only about **77×28 pixels** and blurry (a large domain
+gap vs. the MRL 83×83 / Columbia high-res crops).
+
+Do the steps in order; each has its own acceptance check:
+
+1. **Gate diagnosis (next step, zero code changes)**:
+   `python scripts/test_gaze_live.py --no-gate --dump-crops 30`
+   - `--no-gate`: closed-eye frames are scored too, giving Model B's full predictions (report says "gate off")
+   - `--dump-crops 30`: saves an eye-crop pair every 30 frames into `docs/gaze_test/crops/` (gitignored, privacy)
+   - Reading the results: if frames.csv shows eye_pred mostly closed while the crops clearly show open eyes →
+     Model A's cross-person domain gap is confirmed, go to step 3; if the crops really show closed or
+     unreadably tiny eyes → do step 2 first
+2. **Input quality and geometry**: raise the camera to eye level; raise capture resolution if needed —
+   target eye crops ≥ 120×60 (from ~77×28); check focus and lighting
+3. **Personalization fine-tune (stage 9, the real fix)**: fine-tune both models on the **test subject's own** data —
+   - Capture: `scripts/collect_gaze_video.py` (works on this machine) or phone footage (`phone_videos/`,
+     guide in docs/gaze_data_collection_guide.md)
+   - Label: `scripts/auto_label_phone_videos.py` (iris-ordering QC)
+   - Train: the `scripts/train_eye.py` flow; **flip augmentation must swap labels** (5-class lesson:
+     a flipped look-left image must be re-labeled look-right, otherwise left/right poison each other)
+   - Volume: ≥ 200 crops per person per direction to start, open/closed classes balanced
+4. **Gate strategy evolution**: a) keep Model A as gate after fine-tuning on the user's data;
+   b) switch to a conservative EAR gate (MediaPipe already gives EAR; below 0.08 counts as "definitely
+   closed", no personal calibration needed); c) AND of both. Decide from skip ratios and accuracy in frames.csv.
+5. **Regression acceptance (mandatory for every model change)**: the `test_gaze_live.py` protocol —
+   overall accuracy must not drop, no up↔down / left↔right swapping in the confusion matrix,
+   and the gate's skip ratio back under 30%.
