@@ -35,13 +35,21 @@ FLIP_SWAP = {3: 4, 4: 3}  # 翻转后左右互换 / horizontal flip swaps left/r
 
 
 def classify(v_deg: int, h_deg: int) -> int:
-    """主轴优先 5 类 / dominant-axis 5-class. 返回类别 id。"""
+    """主轴优先 5 类 v2：左右只保留 |H|>=10°。
+
+    v1 教训（训练集实测）：V0H±5（偏 5°）被标为左右，但外观与直视几乎无差，
+    模型在训练集上都只能 74.6% —— 标签边界自相矛盾。本版把 |H|<=5° 并回
+    center/垂直类，左右边界移到 10°（外观可区分）。
+    / v2: |H|<=5 goes to center/vertical; left/right requires |H|>=10.
+    """
     av, ah = abs(v_deg), abs(h_deg)
-    if av == 0 and ah == 0:
-        return 1
-    if av >= ah:
-        return 0 if v_deg < 0 else 2          # 垂直优先（含平局）
-    return 3 if h_deg < 0 else 4              # 水平
+    if ah <= 5:                                # 水平分量小：只可能是垂直/center
+        if av == 0:
+            return 1
+        return 0 if v_deg < 0 else 2
+    if av >= ah:                               # 平局（10vs10）算垂直
+        return 0 if v_deg < 0 else 2
+    return 3 if h_deg < 0 else 4               # |H|>=10：明确的左/右
 
 
 def parse_vh(stem: str):
