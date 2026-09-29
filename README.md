@@ -32,7 +32,8 @@
 | 6 | 眨眼判定准确率评估 + MediaPipe 对比实验 | ✅ |
 | 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换（11,760 裁剪） | ✅ |
 | 8 | 模型 B 训练（n 版 93.62% → 容量对比后升级 s 版 **95.62%**） | ✅ |
-| 9 | 模型 B 个人化微调（等手机采集素材 → 自动打标 → 精调） | ⏸ 等素材 |
+| 9 | 外机实时实测（绿点协议）：**暴露部署域差**，逐层诊断完成 | ⚠️ |
+| 10 | 修复：个人化微调（同摄像头同光照录制，**新增闭眼段**）+ 混合域预训练 | ⏸ 等素材 |
 | 10 | 有摄像头机器：实时工具落地（`live_detect.py` + `test_gaze_live.py`）+ CPU 环境 + 双机同步 | 🔶 通路已验证（CPU 15FPS、真实人脸截图），**真人实测待补** |
 
 **阶段 8 结果 / Stage 8 results**（详见 [docs/training/summary_gaze.md](docs/training/summary_gaze.md)）：
@@ -267,6 +268,8 @@ python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕
 - MRL 文件名标签含少量噪声（文献报告一致率约 90~97%），故准确率为下限
 - 模型 A 在"睁眼但视线朝下"的画面上偶判为 closed_eye（MRL 闭眼类混有垂目样本的域差异），
   个人化微调可修复；predict.py 实测快照时已观察到并如实记录
+- **部署域差（2026-09-29 实测确认）**：跨分布场景下模型 A 98.8% 误判闭眼、
+  模型 B 仅 26.8%——同分布指标（95%+）不代表实时可用；个人化微调前**不得用于实时控制**
 - MRL 以非亚裔面孔为主；模型 B 自采数据将补足本群体特征
 - `datasets/`、`runs/`、视频均不入库；权重与数据集可由脚本完整复现
 
@@ -373,7 +376,8 @@ EyeWheelchairProject repo; this repo only trains, validates, and ships models.
 | 6 | Accuracy benchmark vs MediaPipe | ✅ |
 | 7 | Model B data: Columbia Gaze acquired (5,880 imgs) + eye-crop conversion (11,760 crops) | ✅ |
 | 8 | Model B training (n 93.62% → upgraded to s **95.62%** after capacity test) | ✅ |
-| 9 | Model B personalization (awaiting phone footage → auto-label → fine-tune) | ⏸ waiting |
+| 9 | On-machine live test (green-dot protocol): **deployment domain gap exposed**, layer-by-layer diagnosis done | ⚠️ |
+| 10 | Fix: personalization (same camera/lighting, **new eyes-closed clip**) + mixed-domain pretraining | ⏸ waiting |
 | 10 | Camera machine: live tooling (`live_detect.py` + `test_gaze_live.py`) + CPU env + two-machine sync | 🔶 paths verified (CPU 15 FPS, real face snapshots) — **real-person run pending** |
 
 **Stage 8 results** (see [docs/training/summary_gaze.md](docs/training/summary_gaze.md)):
@@ -381,6 +385,24 @@ overall accuracy **93.62%** (look_center 96.86% / look_down 96.00% / look_up 88.
 mAP50-95=**0.9828**; weights `models/gaze_yolo26s.pt` (upgraded n→s after capacity test).
 Key finding: down is never misread as up (0 cases) — **forward/backward never swap**;
 main error is up→center (small +10° amplitude), harmless for control semantics.
+
+### ⚠️ Stage 9 live-test warning: lab metrics ≠ real-world metrics (2026-09-29)
+
+On-machine green-dot protocol: overall accuracy only **20%** (n=5, not meaningful).
+Layer-by-layer diagnosis (hardcore version:
+[docs/gaze_test/domain_gap_analysis.md](docs/gaze_test/domain_gap_analysis.md)):
+
+- **Model A gate failed**: 98.8% of frames read as closed (mean confidence 0.892);
+- **Model B does not transfer either**: 26.8% on the 400 gated frames (look_up 2.9% /
+  look_down 6.8%);
+- mechanics ruled out (crop/mirror/face detection all fine); **root cause = deployment
+  domain gap** (lab camera/controlled lighting/chin-rest vs普通摄像头/evening/free head).
+
+**Remediation**: ① save live crops via `live_detect` ② lighting A/B test ③
+**personalization fine-tune** (protocol adds a 30s eyes-closed clip; record on the same
+camera under the same lighting) ④ mixed-domain pretraining with MPIIGaze/GazeCapture.
+**New delivery gate: every model must pass test_gaze_live ≥85% before shipping.**
+Failure mode is safe (all-closed = no commands issued).
 
 ## 3. Environment
 
@@ -609,6 +631,9 @@ One commit per stage, **bilingual messages** (Chinese first, then English):
 - MRL filename labels carry minor noise (~90–97% agreement reported); accuracy is a lower bound
 - Model A occasionally says closed_eye on open-but-downcast eyes (domain gap: MRL closed class
   includes downcast samples); observed & documented in the predict.py snapshot test — fixed by personalization
+- **Deployment domain gap (confirmed live 2026-09-29)**: cross-distribution accuracy 26.8% vs
+  i.i.d. 95%+; Model A false-closes 98.8% of frames — **not usable for real-time control
+  before personalization fine-tuning**
 - MRL is mostly non-Asian faces; Model B's self-collected data will cover our user population
 - `datasets/`, `runs/`, and videos are not committed; weights and datasets are fully
   reproducible from the scripts
