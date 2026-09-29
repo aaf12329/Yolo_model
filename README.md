@@ -234,6 +234,14 @@ python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕
 阶段X：中文说明 / Stage X: English description
 ```
 
+**提交前检查清单（2026-09-29 追加约定，每次 commit 前逐项过）**：
+
+1. 本次改动涉及的**功能/脚本/数据**是否已在 README 的架构树与进度表里反映；
+2. 是否引入了**新的文件类型或目录** → `.gitignore` 需要增补或加白名单例外；
+3. 新增了**指令或脚本** → `COMMANDS.md` 是否同步；
+4. 触发了**磁盘策略条款**（≥1GB 写入/删除、跨盘、环境安装）→ `log.md` 是否登记；
+5. 有了**新的实测结果或图表** → `docs/`（summary/results_explained 等）是否归档
+
 ## 十、已知限制
 
 - 无摄像头的机器上无法实测实时脚本（离线接口与链路已验证）；在有摄像头的机器上，
@@ -518,6 +526,14 @@ One commit per stage, **bilingual messages** (Chinese first, then English):
 ```
 阶段X：中文说明 / Stage X: English description
 ```
+
+**Pre-commit checklist (agreed 2026-09-29; run through every commit)**:
+
+1. Do the **features/scripts/data** in this change appear in the README trees & progress table?
+2. Any **new file types or directories** → update `.gitignore` (add or whitelist);
+3. Any new **commands or scripts** → sync `COMMANDS.md`;
+4. Did any **disk-policy clause** trigger (≥1GB writes/deletes, cross-drive, env installs) → log in `log.md`;
+5. Any new **measured results or figures** → archived under `docs/` (summary/results_explained etc.)
 
 ## 10. Known Limitations
 
