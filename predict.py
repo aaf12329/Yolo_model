@@ -87,7 +87,7 @@ def main():
     print(f"设备 / device: {'GPU ' + torch.cuda.get_device_name(0) if device == 0 else 'CPU'}")
 
     eye_model = YOLO(str(ROOT / "models" / "eye_yolo26n.pt"))
-    gaze_model = YOLO(str(ROOT / "models" / "gaze_yolo26n.pt"))
+    gaze_model = YOLO(str(ROOT / "models" / "gaze_yolo26s.pt"))
 
     face_lm = None
     if not args.raw:

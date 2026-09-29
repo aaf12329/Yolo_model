@@ -10,7 +10,7 @@
 | 模型 | 权重（本仓库 `models/`，随 git 分发；训练原始输出在 `runs/…/weights/`） | 类别 | 用途 | 跨受试者准确率 |
 |---|---|---|---|---|
 | A：睁/闭眼 | `yolo_model/models/eye_yolo26n.pt`（ONNX：`runs/eye_yolo26n/weights/best.onnx`，9.2MB） | `open_eye` / `closed_eye` | 眨眼确认 + 闭眼过久安全停止 | 94.33% |
-| B：注视方向 | `yolo_model/models/gaze_yolo26n.pt`（ONNX：`runs/gaze_yolo26n/weights/best.onnx` 同理） | `look_up` / `look_center` / `look_down` | 上看=前进 / 中看=停 / 下看=后退（映射可调） | 93.62% |
+| B：注视方向 | `yolo_model/models/gaze_yolo26s.pt`（yolo26s，95.62%）（ONNX：`runs/gaze_yolo26n/weights/best.onnx` 同理） | `look_up` / `look_center` / `look_down` | 上看=前进 / 中看=停 / 下看=后退（映射可调） | 93.62% |
 
 两个权重都基于 YOLO26n（237 万参数），GPU 单张 <2ms，CPU 也可实时。
 

@@ -31,12 +31,12 @@
 | 5 | 模型 A 训练（早停于第 22 轮，最佳第 13 轮，GPU 共 9.2 分钟） | ✅ |
 | 6 | 眨眼判定准确率评估 + MediaPipe 对比实验 | ✅ |
 | 7 | 模型 B 数据：Columbia Gaze 获取（5,880 张）+ 眼部裁剪转换（11,760 裁剪） | ✅ |
-| 8 | 模型 B 初版训练（早停于第 27 轮，最佳第 18 轮，GPU 2.6 分钟） | ✅ |
+| 8 | 模型 B 训练（n 版 93.62% → 容量对比后升级 s 版 **95.62%**） | ✅ |
 | 9 | 模型 B 个人化微调（等手机采集素材 → 自动打标 → 精调） | ⏸ 等素材 |
 
 **阶段 8 结果 / Stage 8 results**（详见 [docs/training/summary_gaze.md](docs/training/summary_gaze.md)）：
 总判定准确率 **93.62%**（look_center 96.86% / look_down 96.00% / look_up 88.00%），
-mAP50-95=**0.9754**；权重已入库 `models/gaze_yolo26n.pt`（训练原始输出在 runs/）。
+mAP50-95=**0.9828**；权重已入库 `models/gaze_yolo26s.pt`（n→s 容量对比后升级，训练原始输出在 runs/）。
 图：`docs/comparison/columbia_gaze_confusion_matrix.png`、`columbia_gaze_accuracy_chart.png`。
 关键结论：down 几乎不会误判为 up（0 例）——**前进/后退不会互相窜**；
 主要误差是 up→center（+10° 上看幅度小），对控制语义无害且将由个人化微调修复。
@@ -312,12 +312,12 @@ EyeWheelchairProject repo; this repo only trains, validates, and ships models.
 | 5 | Train Model A (early stop @22, best @13, 9.2 min on GPU) | ✅ |
 | 6 | Accuracy benchmark vs MediaPipe | ✅ |
 | 7 | Model B data: Columbia Gaze acquired (5,880 imgs) + eye-crop conversion (11,760 crops) | ✅ |
-| 8 | Model B v1 training (early stop @27, best @18, 2.6 min on GPU) | ✅ |
+| 8 | Model B training (n 93.62% → upgraded to s **95.62%** after capacity test) | ✅ |
 | 9 | Model B personalization (awaiting phone footage → auto-label → fine-tune) | ⏸ waiting |
 
 **Stage 8 results** (see [docs/training/summary_gaze.md](docs/training/summary_gaze.md)):
 overall accuracy **93.62%** (look_center 96.86% / look_down 96.00% / look_up 88.00%),
-mAP50-95=**0.9754**; weights `runs/gaze_yolo26n/weights/best.pt`.
+mAP50-95=**0.9828**; weights `models/gaze_yolo26s.pt` (upgraded n→s after capacity test).
 Key finding: down is never misread as up (0 cases) — **forward/backward never swap**;
 main error is up→center (small +10° amplitude), harmless for control semantics.
 
@@ -352,7 +352,7 @@ yolo_model/
 │  ├─ face_landmarker.task          MediaPipe 478-pt face model (copied from
 │  │                                   EyeWheelchairProject; reused for probing & auto-labeling)
 │  ├─ eye_yolo26n.pt                Model-A deliverable weights (committed, ~5MB)
-│  └─ gaze_yolo26n.pt               Model-B deliverable weights (committed, ~5MB)
+│  └─ gaze_yolo26s.pt               Model-B deliverable weights (committed, ~20MB)
 │
 ├─ scripts/                         every script has a call-graph header comment
 │  ├─ verify_gpu.py                 ① environment check: torch/cuda/ultralytics
