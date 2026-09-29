@@ -12,7 +12,7 @@ git clone 本仓库 → pip install -r requirements.txt → 直接运行：
 流程 / pipeline:
     完整画面 → MediaPipe 478 点定位 → 裁左右眼（与训练数据同款扩边）
     → 模型A（models/eye_yolo26n.pt）判 睁/闭
-    → 模型B（models/gaze_yolo26n.pt）判 上看/中看/下看
+    → 模型B（models/gaze5_yolo26s.pt，5类）判 上看/中看/下看/看左/看右
     （模型输入的定位由 MediaPipe 负责；两模型吃同一份裁剪）
 
 被谁调用 / Called by: 手动 / manual（clone 后第一件事就是它）

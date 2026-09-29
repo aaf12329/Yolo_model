@@ -208,6 +208,22 @@ python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕
 
 全部指令逐条解释见 [COMMANDS.md](COMMANDS.md)。
 
+### 测试与验证代码一览（clone 后即可用 / test tools）
+
+| 脚本 | 测什么 | 命令 | 摄像头 |
+|---|---|---|---|
+| `scripts/verify_gpu.py` | GPU/CUDA/ultralytics 环境自检 | `python scripts/verify_gpu.py` | 否 |
+| `scripts/smoke_test_yolo26.py` | 管线冒烟：GPU 推理 + 1 epoch 训练循环（样图自动生成） | `python scripts/smoke_test_yolo26.py` | 否 |
+| `predict.py` | 单图/目录预测：裁眼→双模型→标注图+summary.json | `python predict.py --image 照片.jpg`（`--raw` 直喂眼部特写） | 否 |
+| `scripts/eval_eye_accuracy.py` | 数据集准确率+混淆矩阵+MediaPipe 探测（报告自动归档） | `python scripts/eval_eye_accuracy.py --config configs/columbia_gaze5.yaml --weights models/gaze5_yolo26s.pt` | 否 |
+| `scripts/plot_training.py` | 训练曲线绘制 | `python scripts/plot_training.py runs/gaze_yolo26s` | 否 |
+| `scripts/live_detect.py` | **实时检测**：5 类注视+睁闭眼，**状态变化时终端播报一行** | `python scripts/live_detect.py`（Q 退出 / S 截图） | **是** |
+| `scripts/test_gaze_live.py` | **绿点协议实测**：屏幕目标=真值，产出准确率+混淆矩阵报告（docs/gaze_test/） | `python scripts/test_gaze_live.py` | **是** |
+| ~~`scripts/compare_yolo_vs_mediapipe.py`~~ | 【已被取代】由 eval_eye_accuracy + test_gaze_live 替代 | — | 是 |
+
+> 克隆后 3 分钟验证流：`verify_gpu → smoke_test → predict.py --image 你的照片.jpg`（前两个不需要任何数据集；
+> 权重随仓库分发，含左右方向请用 5 类权重 `models/gaze5_yolo26s.pt`）。实时工具详见"十一"。
+
 ## 八、与 EyeWheelchairProject 的集成
 
 - **现管线**：`gaze_blink_confirm_demo.py` 用 MediaPipe 478 点做"视线选方向 + 眨眼确认"，
@@ -534,6 +550,22 @@ python scripts/test_gaze_live.py         # ⑪ live gaze benchmark (follow the g
 ```
 
 Every command explained line-by-line in [COMMANDS.md](COMMANDS.md).
+
+### Test & verification tools (usable right after clone)
+
+| Script | What it tests | Command | Camera |
+|---|---|---|---|
+| `scripts/verify_gpu.py` | GPU/CUDA/ultralytics self-check | `python scripts/verify_gpu.py` | no |
+| `scripts/smoke_test_yolo26.py` | Pipeline smoke: GPU inference + 1-epoch training loop (sample auto-generated) | `python scripts/smoke_test_yolo26.py` | no |
+| `predict.py` | Single image / dir prediction: eye crops → dual models → annotated output + JSON | `python predict.py --image photo.jpg` (`--raw` for eye crops) | no |
+| `scripts/eval_eye_accuracy.py` | Dataset accuracy + confusion matrix + MediaPipe probe | `python scripts/eval_eye_accuracy.py --config configs/columbia_gaze5.yaml --weights models/gaze5_yolo26s.pt` | no |
+| `scripts/plot_training.py` | Training curves | `python scripts/plot_training.py runs/gaze_yolo26s` | no |
+| `scripts/live_detect.py` | **Live detection**: 5-class gaze + blink, prints one line on state change | `python scripts/live_detect.py` (Q quit / S snapshot) | **yes** |
+| `scripts/test_gaze_live.py` | **Green-dot protocol benchmark**: screen target = ground truth, writes report (docs/gaze_test/) | `python scripts/test_gaze_live.py` | **yes** |
+| ~~`scripts/compare_yolo_vs_mediapipe.py`~~ | 【superseded】replaced by eval_eye_accuracy + test_gaze_live | — | yes |
+
+> 3-minute post-clone check: `verify_gpu → smoke_test → predict.py --image your_photo.jpg` (first two need no
+> datasets; weights ship with the repo — use `models/gaze5_yolo26s.pt` for left/right). Live tools: section 11.
 
 ## 8. Integration with EyeWheelchairProject
 

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""睁/闭眼判定正面对比：YOLO26(本项目) vs MediaPipe EAR(EyeWheelchairProject 现状)
+"""【已被取代 / SUPERSEDED】实时对比请改用：
+    scripts/eval_eye_accuracy.py（离线数据集评估，本机可跑）
+    scripts/test_gaze_live.py（绿点协议实测，需摄像头）
+本脚本保留仅作历史参考（需摄像头）。
+
+睁/闭眼判定正面对比：YOLO26(本项目) vs MediaPipe EAR(EyeWheelchairProject 现状)
 / Head-to-head benchmark: YOLO26 (this repo) vs MediaPipe EAR (current pipeline).
 
 协议 / Protocol:

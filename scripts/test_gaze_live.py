@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """眼球转动（注视方向）模型实时测试 / Live gaze-direction model test.
 
-测的是模型 B：models/gaze_yolo26n.pt（上看 look_up / 平视 look_center / 下看 look_down）。
+测的是模型 B：models/gaze_yolo26s.pt（3 类主控版；5 类实验版见 gaze5_yolo26s.pt）。
 
 协议 / Protocol（照 compare_yolo_vs_mediapipe.py 的"协议法"）:
     屏幕上出现一个目标点（顶部 / 中央 / 底部）→ 按要求把视线移过去 → 每帧记录模型输出

@@ -13,6 +13,7 @@
 """
 from pathlib import Path
 
+import cv2
 from ultralytics import YOLO
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +21,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def main():
     model = YOLO("yolo26n.pt")  # 自动下载 / auto-download (~6 MB)
+    # 克隆即用：样图缺失时自动合成一张（推理只验证管线，不关心内容）
     sample = ROOT / "datasets" / "label_check" / "tok4_0_s0001_00001_0_0_0_0_0_01.png"
+    if not sample.exists():
+        import numpy as np
+        sample.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(sample), np.random.randint(0, 255, (83, 83), dtype=np.uint8))
     results = model.predict(str(sample), imgsz=640, device=0, verbose=False)
     r = results[0]
     print("推理 OK / inference OK | device:", r.speed, "| detections:", len(r.boxes))

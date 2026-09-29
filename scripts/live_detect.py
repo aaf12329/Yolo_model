@@ -11,7 +11,8 @@
 流程 / pipeline（与 predict.py 完全同款，只是输入从图片换成摄像头帧）:
     摄像头帧（水平镜像，符合体感）→ MediaPipe 478 点定位 → 裁左右眼（训练同款扩边）
     → 模型A（models/eye_yolo26n.pt）判 睁/闭
-    → 模型B（models/gaze_yolo26n.pt）判 上看/中看/下看 → 映射 前进/停/后退 提示
+    → 模型B（models/gaze5_yolo26s.pt，5类）判 上看/中看/下看/看左/看右
+    → 映射 前进/停/后退/左转/右转，状态变化时终端播报
     窗口叠加：双眼框线 + 左上结论面板（眼睛/注视/动作/FPS）+ 按 S 存截图、Q 退出。
 
 按键 / Keys:  Q 退出 · S 存截图（runs/live_snapshots/）

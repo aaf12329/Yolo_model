@@ -91,6 +91,16 @@ python scripts/prepare_mrl_dataset.py
 python scripts/smoke_test_yolo26.py
 ```
 
+## 6b. 实时测试（有摄像头时）/ Live testing
+
+```bash
+# 实时检测：5类注视+睁闭眼，状态变化时终端播报一行（连续2帧确认防抖）
+python scripts/live_detect.py                  # Q 退出 / S 存截图
+# 绿点协议实测：准确率+混淆矩阵报告自动写入 docs/gaze_test/
+python scripts/test_gaze_live.py
+```
+⚠️ 两脚本均以未镜像帧送模型（镜像会左右反转）；镜像只用于显示。
+
 ## 7. 训练 / Training
 
 ```bash
