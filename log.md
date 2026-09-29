@@ -54,8 +54,8 @@
 
 | 时间 | 盘 | 路径 | 大小 | 操作 | 用途 | 状态 |
 |---|---|---|---|---|---|---|
-| 10:30 | C | `yolo_model\datasets\MPIIGaze\MPIIGaze.zip` | **2.16GB** | 下载 | 扩数据面：笔记本摄像头域，15人 21.4万张眼部图（DaRUS 官方归档直链，已报备） | 🔄 |
-| 10:30 | C | `yolo_model\datasets\gazecapture_hf\` | **约1.5GB** | 下载 | 扩数据面：手机前置摄像头域，35人 1.99万张实拍+注视标签（HF镜像，已报备） | 🔄 |
+| 10:30 | C | `yolo_model\datasets\MPIIGaze\MPIIGaze.zip` | **1.79GB**（实际） | 下载 | 扩数据面：笔记本摄像头域，15人 21.4万张眼部图（DaRUS 官方归档直链，已报备） | ✅ 12:30 完成，zip 完整性验证通过 |
+| 10:30 | C | `yolo_model\datasets\gazecapture_hf\` | **1.34GB** | 下载 | 扩数据面：手机前置摄像头域，35人 19,990 张实拍+注视标签（HF镜像，已报备） | ✅ 12:35 完成（64并发） |
 
 ## 待执行 / Planned
 
