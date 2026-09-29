@@ -15,7 +15,9 @@
 | 数据集 | 用途 | 官方页 | 直链 | 状态 |
 |---|---|---|---|---|
 | MRL Eye Dataset (mrlEyes_2018_01) | 模型 A：睁/闭眼，84,898 张特写 | <https://mrl.cs.vsb.cz/eyedataset.html> | <http://mrl.cs.vsb.cz/data/eyedataset/mrlEyes_2018_01.zip>（326MB） | ✅ 已用 |
-| Columbia Gaze Data Set | 模型 B：注视方向，5,880 张（56 人 × 5 头姿 × 7 水平 × 3 垂直方向） | <https://cave.cs.columbia.edu/repository/ColumbiaGazeDataSet> | <https://cave.cs.columbia.edu/old/databases/columbia_gaze/columbia_gaze_data_set.zip>（2.2GB） | ✅ 下载中 |
+| Columbia Gaze Data Set | 模型 B：注视方向，5,880 张（56 人 × 5 头姿 × 7 水平 × 3 垂直方向） | <https://cave.cs.columbia.edu/repository/ColumbiaGazeDataSet> | <https://cave.cs.columbia.edu/old/databases/columbia_gaze/columbia_gaze_data_set.zip>（2.2GB） | ✅ 已用 |
+| **MPIIGaze**（DaRUS 官方归档） | 模型 B 扩充：**笔记本摄像头域**，15 人日常使用 213,659 张眼部图+3D 视线向量 | <https://darus.uni-stuttgart.de/dataset.xhtml?persistentId=doi:10.18419/DARUS-3230> | <https://darus.uni-stuttgart.de/api/access/datafile/165887>（2.16GB，GET 可直下，HEAD 会 403） | ✅ 下载中 |
+| **GazeCapture HF 镜像**（RafeiKAr） | 模型 B 扩充：**手机前置摄像头域**，35 人 19,990 张实拍+屏幕注视坐标（labels.csv 全量 34.7 万行/262 人，图片为其子集） | <https://huggingface.co/datasets/RafeiKAr/eye_tracking_gazecapture> | 逐文件或 `huggingface_hub.snapshot_download`（约1.5GB） | ✅ 下载中 |
 
 注意事项 / caveats:
 
@@ -28,6 +30,13 @@
   / Non-commercial only; cite the UIST 2013 paper.
 - MRL 文件名第 5 字段 = 眼睛状态（0 睁 1 闭）；Columbia Gaze 文件名含注视角度
   （垂直 0/±10°）。两者标签都在文件名里，无需人工标注。
+
+⚠️ 新源使用注意 / usage caveats:
+- MPIIGaze：研究用途许可，需引用 Zhang et al. 2015；眼图 36×60 灰度小图+3D 视线向量，
+  转 5 类需把向量转角度（符号约定同样必须目视/数值验证）
+- GazeCapture：原始许可为研究用途（MIT 发布），HF 镜像为其子集；标签 x/y 是
+  **多设备混合的屏幕像素坐标**（范围 40~984），换算方向类前需按设备/人归一化
+- osama6/gazecapture（5.37GB part1.tar）：来源文档不明，未采用
 
 ## 通用搜索渠道 / General search channels
 

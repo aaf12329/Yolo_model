@@ -50,6 +50,13 @@
 > 当日修复：test_gaze_live.py 指向的 gaze_yolo26n.pt 已被 s 版替换，改为加载主控 3 类版 gaze_yolo26s.pt。
 > 注：预授权位置清单里的训练机路径（`C:\Users\Guards\...`）在本机不存在；本机环境装在 D 盘 Anaconda 默认位置。
 
+## 2026-09-29
+
+| 时间 | 盘 | 路径 | 大小 | 操作 | 用途 | 状态 |
+|---|---|---|---|---|---|---|
+| 10:30 | C | `yolo_model\datasets\MPIIGaze\MPIIGaze.zip` | **2.16GB** | 下载 | 扩数据面：笔记本摄像头域，15人 21.4万张眼部图（DaRUS 官方归档直链，已报备） | 🔄 |
+| 10:30 | C | `yolo_model\datasets\gazecapture_hf\` | **约1.5GB** | 下载 | 扩数据面：手机前置摄像头域，35人 1.99万张实拍+注视标签（HF镜像，已报备） | 🔄 |
+
 ## 待执行 / Planned
 
 | 盘 | 路径 | 预计大小 | 操作 | 条件 |
