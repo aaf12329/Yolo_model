@@ -37,7 +37,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 FACE_MODEL = ROOT / "models" / "face_landmarker.task"
-GAZE_MODEL = ROOT / "models" / "gaze_yolo26n.pt"
+GAZE_MODEL = ROOT / "models" / "gaze_yolo26s.pt"   # 主控 3 类版（95.62%）；5 类实验版是 gaze5_yolo26s.pt
 EYE_MODEL = ROOT / "models" / "eye_yolo26n.pt"
 OUT_DIR = ROOT / "docs" / "gaze_test"
 
