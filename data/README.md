@@ -37,13 +37,30 @@
 ⚠️ **地址会搬家**：老地址 `www.cs.columbia.edu/CAVE/...` 已 404；新站是纯前端
 页面（curl 抓不到正文），要用浏览器打开 Repository 页找直链。
 
-## 3. 模型 B 补充：自采手机视频（个人化微调）⏸ 采集中
+## 3. 扩充数据集（2026-09-29 新增）✅ 已下载
+
+| 数据集 | 域 | 内容 | 直链 | 许可 |
+|---|---|---|---|---|
+| MPIIGaze | **笔记本摄像头** | 15 人日常使用，213,659 张 36×60 眼部图 + 3D 视线向量（2.16GB） | <https://darus.uni-stuttgart.de/api/access/datafile/165887> | 研究用途，引用 Zhang et al. 2015 |
+| GazeCapture HF 镜像 | **手机前置摄像头** | 35 人 19,990 张 640×480 实拍 + 屏幕注视坐标 labels.csv（1.34GB） | <https://huggingface.co/datasets/RafeiKAr/eye_tracking_gazecapture>（snapshot_download） | 原始为研究用途（MIT），镜像为子集 |
+
+> 转换前注意：MPIIGaze 视线向量→角度的符号需验证；GazeCapture 的 x,y 是多设备
+> 混合像素坐标，需按人/设备归一化。渠道详情见 [docs/dataset_sources.md](../docs/dataset_sources.md)。
+
+下载：
+
+```bash
+curl -L -o datasets/MPIIGaze/MPIIGaze.zip https://darus.uni-stuttgart.de/api/access/datafile/165887
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='RafeiKAr/eye_tracking_gazecapture', repo_type='dataset', local_dir='datasets/gazecapture_hf', max_workers=64)"
+```
+
+## 4. 模型 B 补充：自采手机视频（个人化微调）⏸ 采集中
 
 - 拍摄说明：`phone_videos/转发给拍摄的人.txt`（可直接转发微信群）
 - 详细协议与归档规则：[docs/gaze_data_collection_guide.md](../docs/gaze_data_collection_guide.md)
 - 归档位置：`phone_videos/一人一个文件夹/文件名带上中下字.mp4`
 
-## 4. 下载指令 / Download commands
+## 5. 下载指令 / Download commands
 
 ### 方式一：一键脚本（推荐，带断点续传 + 体积校验 + C 盘检查）
 
@@ -71,7 +88,7 @@ curl -L -o datasets/columbia_gaze/columbia_gaze_data_set.zip \
   https://cave.cs.columbia.edu/old/databases/columbia_gaze/columbia_gaze_data_set.zip
 ```
 
-## 5. 下载之后 / After download
+## 6. 下载之后 / After download
 
 ```bash
 python scripts/prepare_mrl_dataset.py            # 模型A：转 YOLO 格式

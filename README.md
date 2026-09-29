@@ -110,7 +110,7 @@ yolo_model/
 │  ├─ training/                     模型A训练档案：summary.md、损失/指标曲线、results.csv
 │  └─ comparison/                   对比实验档案：评估报告、混淆矩阵图、对比柱状图
 │
-├─ datasets/                        （不入库）MRL 原始 zip、解压目录、YOLO 格式数据集
+├─ datasets/                        （不入库）MRL / Columbia / MPIIGaze / GazeCapture 及各自 YOLO 格式数据
 │
 ├─ gaze_captures/                   （不入库）脚本自采的方向素材视频
 │
@@ -438,7 +438,7 @@ yolo_model/
 │  ├─ training/                     Model-A record: summary.md, loss/metric curves, results.csv
 │  └─ comparison/                   benchmark record: report, confusion matrix, accuracy bars
 │
-├─ datasets/                        (not committed) MRL zip, extracted tree, YOLO-format dataset
+├─ datasets/                        (not committed) MRL / Columbia / MPIIGaze / GazeCapture + YOLO-format trees
 ├─ gaze_captures/                   (not committed) self-captured gaze footage
 └─ runs/                            (not committed) training output & curves; deliverable weights copied to models/
 ```

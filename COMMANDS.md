@@ -111,6 +111,34 @@ python scripts/plot_training.py
 python scripts/plot_training.py runs/smoke/yolo26n_coco8
 ```
 
+## 8b. 模型 B 流水线（Columbia 3类/5类）/ Model B pipeline
+
+```bash
+# 3类：解压 Columbia → MediaPipe 裁眼 → YOLO 格式（约20分钟）
+python scripts/prepare_columbia_gaze_dataset.py
+
+# 5类（上/中/下/左/右）：复用已有裁剪重标注（主轴优先+翻转互换增强，秒级）
+python scripts/prepare_columbia_gaze5_dataset.py
+
+# 训练（5类必须 --fliplr 0，否则左右标签被翻转增强污染）
+python scripts/train_eye.py --data configs/columbia_gaze.yaml --name gaze_yolo26s --model yolo26s.pt --imgsz 128
+python scripts/train_eye.py --data configs/columbia_gaze5.yaml --name gaze5_yolo26s --model yolo26s.pt --imgsz 128 --fliplr 0
+
+# 评估（配置驱动，报告/图表按 config 命名）
+python scripts/eval_eye_accuracy.py --config configs/columbia_gaze5.yaml --weights runs/gaze5_yolo26s/weights/best.pt
+```
+
+⚠️ 含左右方向的模型：①训练必须 --fliplr 0 ②推理输入必须未镜像帧（镜像会
+左右反转）——live_detect/test_gaze_live 已按此实现。
+
+```bash
+# 读取 runs/eye_yolo26n/results.csv，保存 curves_loss.png / curves_metrics.png
+python scripts/plot_training.py
+
+# 指定其他结果目录 / other run dir
+python scripts/plot_training.py runs/smoke/yolo26n_coco8
+```
+
 ## 9. 准确率评估 / Accuracy evaluation
 
 ```bash
