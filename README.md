@@ -185,8 +185,8 @@ yolo_model/
   启动门槛 ≥3 人，建议 5~8 人）
 - **流水线**：视频 + 文件名方向 → MediaPipe 自动打标 → YOLO 格式 → 在底座权重上
   微调 → 曲线+报告 → 对接状态机
-- **5 类扩展版**（`models/gaze5_yolo26s.pt`，80.90%）：加入 look_left/look_right
-  （主轴优先标注+翻转互换增强），center 因"注视空间一个点"结构性偏弱（42%），
+- **5 类扩展版**（`models/gaze5_yolo26s.pt`，**82.54%**）：加入 look_left/look_right
+  （主轴优先标注+翻转互换增强；左右边界 |H|>=10° 的 v2 标注，center 42.1%→76.5%，
   逐图解读见 [docs/results_explained.md](docs/results_explained.md)
 
 ## 七、快速开始
@@ -436,7 +436,7 @@ yolo_model/
 │  │                                   EyeWheelchairProject; reused for probing & auto-labeling)
 │  ├─ eye_yolo26n.pt                Model-A deliverable weights (2-class, 94.33%)
 │  ├─ gaze_yolo26s.pt               Model-B deliverable weights (3-class, 95.62%, primary)
-│  └─ gaze5_yolo26s.pt              Model-B extended weights (5-class w/ left-right, 80.90%)
+│  └─ gaze5_yolo26s.pt              Model-B extended weights (5-class w/ left-right, 82.54%)
 │
 ├─ scripts/                         every script has a call-graph header comment
 │  ├─ verify_gpu.py                 ① environment check: torch/cuda/ultralytics
@@ -549,9 +549,9 @@ yolo_model/
   kick-off threshold ≥3 contributors, 5–8 recommended)
 - **Pipeline**: footage + filename direction → MediaPipe auto-labeling → YOLO format →
   fine-tune on bootstrap weights → curves + report → state machine
-- **5-class extended** (`models/gaze5_yolo26s.pt`, 80.90%): adds look_left/look_right
-  (dominant-axis labeling + flip-swap augmentation); center is structurally weak (42%) —
-  figure-by-figure walkthrough in [docs/results_explained.md](docs/results_explained.md)
+- **5-class extended** (`models/gaze5_yolo26s.pt`, **82.54%**): adds look_left/look_right
+  (dominant-axis labeling + flip-swap augmentation; left/right boundary |H|>=10°, center
+  42.1%→76.5%) — figure-by-figure walkthrough in [docs/results_explained.md](docs/results_explained.md)
 
 ## 7. Quick Start
 
