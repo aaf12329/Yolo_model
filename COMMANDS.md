@@ -185,7 +185,7 @@ python scripts/live_detect.py --camera 1 --conf 0.4       # 换摄像头 / 放�
 Overlay shows eye boxes + verdict panel; **Q quit, S snapshot** (into `runs/live_snapshots/`).
 Currently wired to the 5-class model `models/gaze5_yolo26s.pt` (left/right included).
 
-## 12. 眼球状态实时查看 / Live eye-state viewer
+## 12. 眼球状态实时查看 · 双引擎对比 / Dual-engine viewer
 
 ```bash
 python scripts/test_gaze_live.py                    # 持续输出当前眼球状态，Q 中止
@@ -193,9 +193,11 @@ python scripts/test_gaze_live.py --model models/gaze_yolo26s.pt   # 换 3 类主
 python scripts/test_gaze_live.py --dump-crops 30    # 每30帧存眼部裁剪图（诊断用）
 ```
 
-**无校准、无协议**：启动即持续输出当前眼球状态——屏幕面板显示"当前：直视/看左/…"
-（中文大字 + 动作 + 置信度 + FPS），**终端只在状态稳定变化时打印一行**
-（新方向需连续 2 帧确认）。历史版本（绿点协议实测）在 git 历史中（commit 00e86da）。
+**双引擎同帧对比**：YOLO（学习法，受训练域影响）× MediaPipe（几何法，EAR+虹膜位置，
+无训练依赖）——屏幕双栏显示两引擎的 眼睛/注视 结论 + 一致性标记，**终端播报状态变化
+与双引擎分歧**。实验目的：几何法不受训练域影响——几何法正常而 YOLO 崩 = 域差实锤；
+几何法也崩 = 采集/设备问题。MP 阈值可用 --mp-* 调整（垂直阈值来自 Columbia 真值标定）。
+历史版本（绿点协议实测）在 git 历史中（commit 00e86da）。
 
 **会话过程记录**（默认开启，`--no-log` 关闭）：每次运行自动写
 `docs/gaze_test/sessions/session_<时间戳>/`——逐帧 CSV（时间/眼睛/方向/置信度）+
