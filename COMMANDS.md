@@ -96,8 +96,9 @@ python scripts/smoke_test_yolo26.py
 ```bash
 # 实时检测：5类注视+睁闭眼，状态变化时终端播报一行（连续2帧确认防抖）
 python scripts/live_detect.py                  # Q 退出 / S 存截图
-# 绿点协议实测：准确率+混淆矩阵报告自动写入 docs/gaze_test/
+# 眼球状态实时查看器（无校准无协议）：屏幕显示当前状态，终端播报变化
 python scripts/test_gaze_live.py
+# 历史版本（绿点协议实测）在 git 历史中：commit 00e86da 及之前
 ```
 ⚠️ 两脚本均以未镜像帧送模型（镜像会左右反转）；镜像只用于显示。
 
@@ -184,18 +185,19 @@ python scripts/live_detect.py --camera 1 --conf 0.4       # 换摄像头 / 放�
 Overlay shows eye boxes + verdict panel; **Q quit, S snapshot** (into `runs/live_snapshots/`).
 Currently wired to the 5-class model `models/gaze5_yolo26s.pt` (left/right included).
 
-## 12. 注视方向实测 / Live gaze benchmark
+## 12. 眼球状态实时查看 / Live eye-state viewer
 
 ```bash
-python scripts/test_gaze_live.py                          # 3 方向 × 2 轮 ≈ 45 秒，Q 中止
-python scripts/test_gaze_live.py --rounds 3 --look-sec 8  # 更长 / longer run
+python scripts/test_gaze_live.py                    # 持续输出当前眼球状态，Q 中止
+python scripts/test_gaze_live.py --model models/gaze_yolo26s.pt   # 换 3 类主控版
+python scripts/test_gaze_live.py --dump-crops 30    # 每30帧存眼部裁剪图（诊断用）
 ```
 
-跟随屏幕绿点看（上/中/下），**头不动只动眼睛**；结束自动生成 `docs/gaze_test/` 下的
-`report.md`（准确率 + 混淆矩阵）、`frames.csv`、`gaze_confusion_matrix.png`。
-主控模型为主 `models/gaze_yolo26s.pt`（3 类 95.62%）。闭眼帧经模型 A 门控不计分；
-**终端边沿播报**：方向稳定变化时才打印一行（新方向需连续 2 帧确认）。
-Follow the green dot (up/center/down), head still. Outputs land in `docs/gaze_test/`.
+**无校准、无协议**：启动即持续输出当前眼球状态——屏幕面板显示"当前：直视/看左/…"
+（中文大字 + 动作 + 置信度 + FPS），**终端只在状态稳定变化时打印一行**
+（新方向需连续 2 帧确认）。历史版本（绿点协议实测）在 git 历史中（commit 00e86da）。
+*No calibration, no protocol — just a continuous stream of the current eye state;
+terminal prints only on stable state changes. The old green-dot benchmark lives in git history.*
 Closed-eye frames are gated by Model A and not scored; the terminal prints one line
 per **stable** direction change (2-frame confirmation).
 

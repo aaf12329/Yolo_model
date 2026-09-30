@@ -90,7 +90,7 @@ yolo_model/
 │  │                                   已用合成视频端到端验证；输出 datasets/phone_gaze_yolo/）
 │  ├─ live_detect.py                ⑩ 摄像头实时检测：MediaPipe 定位 + 双模型判定，
 │  │                                   叠加眼框与结论面板（Q 退出 / S 截图）
-│  └─ test_gaze_live.py             ⑪ 注视方向实测：屏幕绿点目标协议 → 准确率 + 混淆矩
+│  └─ test_gaze_live.py             ⑪ 眼球状态实时查看器：无校准无协议，持续输出当前状态
 │                                      阵报告（闭眼帧由模型A门控、不计分）
 │
 ├─ phone_videos/                    模型B手机素材归档区（一人一文件夹，文件名带上/中/下）
@@ -204,7 +204,7 @@ python scripts/eval_eye_accuracy.py      # ⑤ 准确率评估+对比图
 python predict.py --image 某张人脸照片.jpg  # ⑥ 一行命令跑预测（权重已入库）
 # python scripts/collect_gaze_video.py   # ⑦（有摄像头时）自采方向素材
 python scripts/live_detect.py            # ⑩ 摄像头实时检测（Q 退出 / S 截图）
-python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕绿点看上/中/下）
+python scripts/test_gaze_live.py         # ⑪ 眼球状态实时查看（屏幕直接显示当前状态）
 ```
 
 全部指令逐条解释见 [COMMANDS.md](COMMANDS.md)。
@@ -219,7 +219,7 @@ python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕
 | `scripts/eval_eye_accuracy.py` | 数据集准确率+混淆矩阵+MediaPipe 探测（报告自动归档） | `python scripts/eval_eye_accuracy.py --config configs/columbia_gaze5.yaml --weights models/gaze5_yolo26s.pt` | 否 |
 | `scripts/plot_training.py` | 训练曲线绘制 | `python scripts/plot_training.py runs/gaze_yolo26s` | 否 |
 | `scripts/live_detect.py` | **实时检测**：5 类注视+睁闭眼，**状态变化时终端播报一行** | `python scripts/live_detect.py`（Q 退出 / S 截图） | **是** |
-| `scripts/test_gaze_live.py` | **绿点协议实测**：屏幕目标=真值，产出准确率+混淆矩阵报告（docs/gaze_test/） | `python scripts/test_gaze_live.py` | **是** |
+| `scripts/test_gaze_live.py` | **眼球状态实时查看器**：无校准无协议，屏幕显示"当前：看左"这类状态，终端只在变化时打印 | `python scripts/test_gaze_live.py`（默认 5 类模型） | **是** |
 | ~~`scripts/compare_yolo_vs_mediapipe.py`~~ | 【已被取代】由 eval_eye_accuracy + test_gaze_live 替代 | — | 是 |
 
 > 克隆后 3 分钟验证流：`verify_gpu → smoke_test → predict.py --image 你的照片.jpg`（前两个不需要任何数据集；
@@ -278,7 +278,7 @@ python scripts/test_gaze_live.py         # ⑪ 注视方向实测（跟随屏幕
 | 脚本 | 用途 | 输出 |
 |---|---|---|
 | `scripts/live_detect.py` | 摄像头实时检测：MediaPipe 定位 478 点 → 裁双眼 → 模型A 判睁/闭 + 模型B 判上/中/下 → 画面叠加眼框、结论面板、FPS | 窗口；按 `S` 存到 `runs/live_snapshots/` |
-| `scripts/test_gaze_live.py` | **注视方向实测**：屏幕出现绿点（上/中/下），按提示看 → 逐帧记录模型输出 → 准确率 + 混淆矩阵 | `docs/gaze_test/`：`frames.csv`、`report.md`、`gaze_confusion_matrix.png` |
+| `scripts/test_gaze_live.py` | **眼球状态实时查看器**（无校准无协议）：屏幕显示"当前：直视/看左/…"，终端只在状态变化时播报；`--dump-crops` 可存裁剪图诊断 | 窗口 + 终端播报；`S` 存截图到 `runs/live_snapshots/` |
 
 ```bash
 conda activate yolo
