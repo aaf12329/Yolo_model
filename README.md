@@ -191,6 +191,20 @@ yolo_model/
 
 ## 七、快速开始
 
+# ⚡ 日常主力命令（最常跑的）
+
+```bash
+python scripts/test_gaze_live.py           # ⑪ 双引擎实时查看器（最常用）
+python predict.py --image 某张人脸照片.jpg  # ⑥ 单图预测（权重已入库）
+python scripts/eval_eye_accuracy.py        # ⑤ 精度评估+混淆矩阵
+```
+
+**📌 数据自动保存位置**：运行 ⑪ 后，逐帧 CSV 与会话摘要写入
+`docs\gaze_test\sessions\session_<时间戳>\`；按 `S` 的截图存 `runs\live_snapshots\`。
+这些随 git 入库备份，换设备也能核对。
+
+### 完整指令清单（按流程编号）
+
 ```bash
 conda activate yolo
 cd <repo path on this machine>   # e.g. C:\Users\AAF12\Desktop\Yolo_model
