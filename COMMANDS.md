@@ -95,7 +95,7 @@ python scripts/smoke_test_yolo26.py
 
 ```bash
 # 实时检测：5类注视+睁闭眼，状态变化时终端播报一行（连续2帧确认防抖）
-python scripts/live_detect.py                  # Q 退出 / S 存截图
+python scripts/live_detect.py                  # Q 退出 / S 存截图（YOLO 单引擎版）
 # 眼球状态实时查看器（无校准无协议）：屏幕显示当前状态，终端播报变化
 python scripts/test_gaze_live.py
 # 历史版本（绿点协议实测）在 git 历史中：commit 00e86da 及之前

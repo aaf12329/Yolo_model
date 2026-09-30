@@ -277,7 +277,7 @@ python scripts/test_gaze_live.py         # ⑪ 眼球状态实时查看（屏幕
 
 | 脚本 | 用途 | 输出 |
 |---|---|---|
-| `scripts/live_detect.py` | 摄像头实时检测：MediaPipe 定位 478 点 → 裁双眼 → 模型A 判睁/闭 + 模型B 判上/中/下 → 画面叠加眼框、结论面板、FPS | 窗口；按 `S` 存到 `runs/live_snapshots/` |
+| `scripts/live_detect.py` | 摄像头实时检测：MediaPipe 定位 478 点 → 裁双眼 → 模型A 判睁/闭 + 模型B 判注视（3 类）→ 画面叠加眼框、结论面板、FPS | 窗口；按 `S` 存到 `runs/live_snapshots/` |
 | `scripts/test_gaze_live.py` | **双引擎实时查看器**：同帧同跑 YOLO（学习法）与 MediaPipe（几何法），屏幕双栏对比+一致性标记，终端播报状态变化与分歧；会话记录含双引擎列 | 窗口 + 终端播报；`S` 存截图；会话写入 `docs/gaze_test/sessions/`（CSV 含 mp_ear/mp_eye/mp_gaze 列 + 一致率摘要） |
 
 ```bash
