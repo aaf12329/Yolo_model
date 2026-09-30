@@ -278,7 +278,7 @@ python scripts/test_gaze_live.py         # ⑪ 眼球状态实时查看（屏幕
 | 脚本 | 用途 | 输出 |
 |---|---|---|
 | `scripts/live_detect.py` | 摄像头实时检测：MediaPipe 定位 478 点 → 裁双眼 → 模型A 判睁/闭 + 模型B 判上/中/下 → 画面叠加眼框、结论面板、FPS | 窗口；按 `S` 存到 `runs/live_snapshots/` |
-| `scripts/test_gaze_live.py` | **眼球状态实时查看器**（无校准无协议）：屏幕显示"当前：直视/看左/…"，终端只在状态变化时播报；`--dump-crops` 可存裁剪图诊断 | 窗口 + 终端播报；`S` 存截图到 `runs/live_snapshots/` |
+| `scripts/test_gaze_live.py` | **眼球状态实时查看器**（无校准无协议）：屏幕显示"当前：直视/看左/…"，终端只在状态变化时播报；`--dump-crops` 可存裁剪图诊断 | 窗口 + 终端播报；`S` 存截图到 `runs/live_snapshots/`；**会话过程记录**自动写入 `docs/gaze_test/sessions/`（逐帧 CSV + 摘要） |
 
 ```bash
 conda activate yolo

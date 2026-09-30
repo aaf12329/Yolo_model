@@ -196,6 +196,11 @@ python scripts/test_gaze_live.py --dump-crops 30    # 每30帧存眼部裁剪图
 **无校准、无协议**：启动即持续输出当前眼球状态——屏幕面板显示"当前：直视/看左/…"
 （中文大字 + 动作 + 置信度 + FPS），**终端只在状态稳定变化时打印一行**
 （新方向需连续 2 帧确认）。历史版本（绿点协议实测）在 git 历史中（commit 00e86da）。
+
+**会话过程记录**（默认开启，`--no-log` 关闭）：每次运行自动写
+`docs/gaze_test/sessions/session_<时间戳>/`——逐帧 CSV（时间/眼睛/方向/置信度）+
+`summary.md`（时长、FPS、各状态占比、状态变化时间线），供事后核对
+"当时模型看到了什么、说了什么"。
 *No calibration, no protocol — just a continuous stream of the current eye state;
 terminal prints only on stable state changes. The old green-dot benchmark lives in git history.*
 Closed-eye frames are gated by Model A and not scored; the terminal prints one line

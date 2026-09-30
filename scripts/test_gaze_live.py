@@ -28,7 +28,9 @@
 内部调用 / Calls: mediapipe.tasks(VIDEO 模式), ultralytics.YOLO ×2, cv2, PIL
 """
 import argparse
+import csv
 import time
+from collections import Counter
 from pathlib import Path
 
 import cv2
@@ -41,6 +43,7 @@ EYE_MODEL = ROOT / "models" / "eye_yolo26n.pt"
 GAZE_MODEL_DEFAULT = ROOT / "models" / "gaze5_yolo26s.pt"   # 5 类（含左右）
 SNAPSHOT_DIR = ROOT / "runs" / "live_snapshots"
 CROP_DIR = ROOT / "docs" / "gaze_test" / "crops"
+SESSION_DIR = ROOT / "docs" / "gaze_test" / "sessions"  # 会话过程记录（可入库，方便核对）
 
 # 与训练数据同款眼周关键点与扩边 / same landmarks & margins as training data
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
@@ -228,6 +231,8 @@ def main() -> None:
                     help="闭眼帧也更新注视输出（默认闭眼时注视不更新——方向无物理意义）")
     ap.add_argument("--dump-crops", type=int, default=0,
                     help="每 N 帧把眼部裁剪图存 docs/gaze_test/crops/（诊断模型输入质量）")
+    ap.add_argument("--no-log", action="store_true",
+                    help="不写会话过程记录（默认写：逐帧 CSV + 变化事件 + 结束摘要）")
     args = ap.parse_args()
 
     import torch
@@ -252,6 +257,16 @@ def main() -> None:
     ts_ms, frame_count, crop_count = 0, 0, 0
     t0 = time.perf_counter()
     eye_state, eye_conf, gaze_dir, gaze_conf = None, 0.0, None, 0.0
+    # ---- 会话过程记录（事后核对用）：逐帧状态 + 变化事件 ----
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    session_dir = SESSION_DIR / f"session_{stamp}"
+    rows: list[list] = []      # [t_rel, frame, eye, eye_conf, gaze, gaze_conf]
+    events: list[tuple[float, str]] = []  # (t_rel, 播报行)
+    if args.no_log:
+        print("会话记录已关闭（--no-log）")
+    else:
+        session_dir.mkdir(parents=True, exist_ok=True)
+        print(f"会话记录中 / logging to: {session_dir}")
     try:
         while True:
             # ---- 看：取一帧（模型吃未镜像帧；镜像只用于显示）----
@@ -283,6 +298,10 @@ def main() -> None:
 
             frame_count += 1
             fps = frame_count / max(now - t0, 0.001)
+            if not args.no_log:
+                rows.append([round(now - t0, 2), frame_count,
+                             eye_state or "no_face", round(eye_conf, 3),
+                             gaze_dir or "no_face", round(gaze_conf, 3)])
 
             # ---- 显：镜像显示（体感）+ 中文面板（当前眼球状态）----
             if not args.no_window:
@@ -294,6 +313,7 @@ def main() -> None:
             valid = (eye_state == "open_eye") or args.no_gate
             line = announcer.update(gaze_dir, gaze_conf, valid=valid and gaze_dir is not None)
             if line:
+                events.append((round(now - t0, 1), line))
                 print(f"{line}   @ {now - t0:.1f}s")
 
             if args.max_frames and frame_count >= args.max_frames:
@@ -312,6 +332,44 @@ def main() -> None:
         cv2.destroyAllWindows()
         if crop_count:
             print(f"诊断裁剪已存 / diag crops: {CROP_DIR}（{crop_count} 张）")
+        # ---- 会话收尾：写逐帧 CSV + 摘要 md（事后核对用）----
+        if not args.no_log and rows:
+            elapsed = time.perf_counter() - t0
+            session_dir.mkdir(parents=True, exist_ok=True)
+            csv_path = session_dir / f"session_{stamp}.csv"
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                w = csv.writer(f)
+                w.writerow(["t_s", "frame", "eye", "eye_conf", "gaze", "gaze_conf"])
+                w.writerows(rows)
+
+            gaze_counter = Counter(r[4] for r in rows)
+            eye_counter = Counter(r[2] for r in rows)
+            total = len(rows)
+            md = [
+                f"# 会话记录 / session {stamp}",
+                "",
+                f"- 时长 / duration: {elapsed:.1f}s　帧数 / frames: {total}"
+                f"（平均 {total / max(elapsed, 0.001):.1f} FPS）",
+                f"- 模型 / models: eye={EYE_MODEL.name}, gaze={Path(args.model).name}"
+                f"（conf>={args.conf}, stable={args.stable_frames} 帧）",
+                f"- 眼睛状态分布 / eye: " + "，".join(
+                    f"{k}={v}（{v / total * 100:.0f}%）" for k, v in eye_counter.most_common()),
+                f"- 注视状态分布 / gaze: " + "，".join(
+                    f"{GAZE_ZH.get(k, k)}={v}（{v / total * 100:.0f}%）"
+                    for k, v in gaze_counter.most_common()),
+                f"- 诊断裁剪 / crops: {crop_count} 张" + (f"（--dump-crops {args.dump_crops}）" if args.dump_crops else ""),
+                "",
+                "## 状态变化时间线 / state-change timeline",
+                "",
+            ]
+            md += [f"- {t:.1f}s　{line}" for t, line in events] or ["-（无状态变化 / no changes）"]
+            md += ["", f"- 逐帧数据 / per-frame: `{csv_path.name}`",
+                   f"- 原始截图（如按过 S）: `runs/live_snapshots/`"]
+            summary_path = session_dir / f"session_{stamp}_summary.md"
+            summary_path.write_text("\n".join(md), encoding="utf-8")
+            print(f"\n会话记录已保存 / session log saved:")
+            print(f"  逐帧 CSV: {csv_path}")
+            print(f"  摘要:     {summary_path}")
 
 
 if __name__ == "__main__":
